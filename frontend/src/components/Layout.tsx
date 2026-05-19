@@ -41,11 +41,14 @@ export default function Layout() {
 
       const response = await chatRequest(effectiveMessage, mode, hexagramData)
 
+      // 自动模式优先用 API 返回的卦象，手动模式用本地构建的
+      const displayHexagram = response.hexagram || hexagramData || null
+
       const assistantMsg = {
         id: (Date.now() + 1).toString(),
         role: 'assistant' as const,
         content: response.answer,
-        hexagram: response.hexagram,
+        hexagram: displayHexagram,
         thinkingChain: response.thinking_chain,
         timestamp: Date.now(),
       }
@@ -75,7 +78,7 @@ export default function Layout() {
       {/* 主内容区：三栏 */}
       <div className="flex-1 flex overflow-hidden">
         {/* 左侧面板 - 输入区 */}
-        <aside className="w-80 border-r border-gray-800 flex flex-col overflow-hidden">
+        <aside className="w-[25rem] border-r border-gray-800 flex flex-col overflow-hidden">
           <div className="p-3 border-b border-gray-800">
             <ModeSwitch />
           </div>

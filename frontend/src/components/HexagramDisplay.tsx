@@ -5,9 +5,13 @@ interface Props {
 }
 
 export default function HexagramDisplay({ data }: Props) {
+  const sizhuStr = data.sizhu
+    ? `${data.sizhu.year}年 ${data.sizhu.month}月 ${data.sizhu.day}日 ${data.sizhu.hour}时`
+    : ''
+
   return (
     <div className="bg-gray-900/80 border border-gray-700 rounded-lg p-3 text-xs">
-      {/* 卦名 + 四柱 */}
+      {/* 卦名 */}
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
           <span className="text-amber-400 font-bold text-base">{data.hexagram_name}</span>
@@ -18,72 +22,46 @@ export default function HexagramDisplay({ data }: Props) {
             </>
           )}
         </div>
-        {data.sizhu && (
-          <span className="text-gray-500">
-            {data.sizhu.year} {data.sizhu.month} {data.sizhu.day} {data.sizhu.hour}
-          </span>
-        )}
       </div>
 
-      {/* 月建/日辰/旬空 */}
-      <div className="flex gap-3 mb-2 text-gray-400">
-        <span>月建: <span className="text-gray-200">{data.yue_jian}</span></span>
-        <span>日辰: <span className="text-gray-200">{data.ri_chen}</span></span>
-        <span>旬空: <span className="text-gray-200">{data.xun_kong.join(' ')}</span></span>
+      {/* 干支 + 空亡 */}
+      <div className="flex gap-4 mb-2 text-gray-400">
+        {sizhuStr && <span>干支: <span className="text-gray-200">{sizhuStr}</span></span>}
+        <span>空亡: <span className="text-gray-200">{data.xun_kong.join(' ')}</span></span>
       </div>
 
-      {/* 六爻表头 */}
-      <div className="grid grid-cols-[2rem_repeat(6,1fr)] gap-1 mb-1">
-        <div className="text-gray-500"></div>
-        {[6, 5, 4, 3, 2, 1].map((pos) => (
-          <div key={pos} className="text-center text-gray-500">{['', '初', '二', '三', '四', '五', '上'][pos]}爻</div>
-        ))}
-      </div>
+      {/* 六爻表：从上爻到初爻 */}
+      <div className="grid grid-cols-[auto_auto_auto_auto_auto] gap-x-2 gap-y-0.5 text-[10px]">
+        {/* 表头 */}
+        <div className="text-gray-600">爻</div>
+        <div className="text-gray-600 text-center">六神</div>
+        <div className="text-gray-600 text-center">干支</div>
+        <div className="text-gray-600 text-center">六亲</div>
+        <div className="text-gray-600 text-center">世应</div>
 
-      {/* 阴阳行 */}
-      <div className="grid grid-cols-[2rem_repeat(6,1fr)] gap-1 mb-1">
-        <div className="text-gray-500 text-[10px] self-center">阴阳</div>
         {[6, 5, 4, 3, 2, 1].map((pos) => {
           const line = data.yao_lines.find((l) => l.position === pos)
-          const isYang = line?.type === 'yang'
-          return (
-            <div key={pos} className="text-center text-lg">
-              {isYang ? (
-                <span className="text-gray-200">━━━</span>
-              ) : (
-                <span className="text-gray-200">━ ┄</span>
-              )}
-              {line?.changing && <span className="text-red-500 ml-0.5">○</span>}
-            </div>
-          )
-        })}
-      </div>
+          if (!line) return null
+          const posLabel = ['', '初', '二', '三', '四', '五', '上'][pos]
+          const isKong = line.xun_kong
+          const yaoSymbol = line.type === 'yang' ? '━━━' : '━ ┄'
+          const changingMark = line.changing ? ' ○' : ''
+          const shiYingMark =
+            line.shi_ying === 'shi' ? '世' : line.shi_ying === 'ying' ? '应' : ''
 
-      {/* 地支 + 六亲行 */}
-      <div className="grid grid-cols-[2rem_repeat(6,1fr)] gap-1 mb-1">
-        <div className="text-gray-500 text-[10px] self-center">干支</div>
-        {[6, 5, 4, 3, 2, 1].map((pos) => {
-          const line = data.yao_lines.find((l) => l.position === pos)
-          const label = [line?.shi_ying === 'shi' ? '世' : '', line?.shi_ying === 'ying' ? '应' : ''].filter(Boolean).join('')
           return (
-            <div key={pos} className="text-center">
-              <span className="text-gray-300">{line?.gan}{line?.zhi}</span>
-              {label && <span className="ml-1 text-amber-400">{label}</span>}
-            </div>
-          )
-        })}
-      </div>
-
-      {/* 六亲行 */}
-      <div className="grid grid-cols-[2rem_repeat(6,1fr)] gap-1">
-        <div className="text-gray-500 text-[10px] self-center">六亲</div>
-        {[6, 5, 4, 3, 2, 1].map((pos) => {
-          const line = data.yao_lines.find((l) => l.position === pos)
-          const isKong = line?.xun_kong
-          return (
-            <div key={pos} className="text-center">
-              <span className={`${isKong ? 'text-gray-600 line-through' : 'text-gray-300'}`}>
-                {line?.liuqin || '-'}
+            <div key={pos} className="contents">
+              <span className="text-gray-500 py-0.5">{posLabel}</span>
+              <span className="text-center text-amber-500/60 py-0.5">{line.liushen || '-'}</span>
+              <span className={`text-center py-0.5 ${isKong ? 'text-gray-600 line-through' : 'text-gray-200'}`}>
+                {yaoSymbol}{changingMark}<br />
+                <span className="text-[9px]">{line.gan}{line.zhi}</span>
+              </span>
+              <span className={`text-center py-0.5 ${isKong ? 'text-gray-600 line-through' : 'text-gray-300'}`}>
+                {line.liuqin || '-'}
+              </span>
+              <span className={`text-center py-0.5 font-bold ${line.shi_ying === 'shi' ? 'text-amber-400' : line.shi_ying === 'ying' ? 'text-blue-400' : 'text-gray-600'}`}>
+                {shiYingMark}
               </span>
             </div>
           )

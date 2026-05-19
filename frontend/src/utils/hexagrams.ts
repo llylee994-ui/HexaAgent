@@ -18,7 +18,7 @@ const HEXAGRAM_TRIGRAMS: Record<string, [string, string]> = {
   '地水师': ['坤', '坎'], '水地比': ['坎', '坤'],
   '风天小畜': ['巽', '乾'], '天泽履': ['艮', '兑'],
   '地天泰': ['坤', '乾'], '天地否': ['乾', '坤'],
-  '天火同人': ['乾', '离'], '火天大有': ['乾', '离'],
+  '天火同人': ['乾', '离'], '火天大有': ['离', '乾'],
   '地山谦': ['坤', '艮'], '雷地豫': ['震', '坤'],
   '泽雷随': ['兑', '震'], '山风蛊': ['艮', '巽'],
   '地泽临': ['坤', '兑'], '风地观': ['乾', '坤'],
@@ -55,8 +55,6 @@ export function getHexagramYao(name: string): ('yang' | 'yin')[] {
 
 export const HEXAGRAM_NAMES = Object.keys(HEXAGRAM_TRIGRAMS)
 
-// 地支选项
 export const DIZHI_OPTIONS = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥']
-
-// 六亲选项
 export const LIUQIN_OPTIONS = ['父母', '兄弟', '妻财', '官鬼', '子孙']
+export const LIUSHEN = ['青龙', '朱雀', '勾陈', '腾蛇', '白虎', '玄武']

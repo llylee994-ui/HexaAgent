@@ -8,6 +8,7 @@ export interface YaoLine {
   liuqin: string
   shi_ying: 'shi' | 'ying' | null
   xun_kong: boolean
+  liushen: string
 }
 
 export interface Sizhu {

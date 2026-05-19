@@ -1,4 +1,4 @@
-"""排盘主入口：四柱 + 起卦 + 纳甲 + 六亲 + 世应 + 空亡 → 标准卦象 JSON"""
+"""排盘主入口：四柱 + 起卦 + 纳甲 + 六亲 + 世应 + 空亡 + 六神 → 标准卦象 JSON"""
 
 from datetime import datetime
 from typing import Optional
@@ -9,18 +9,11 @@ from .najia import apply_najia
 from .shiying import apply_shiying
 from .liuqin import apply_liuqin
 from .xunkong import apply_xunkong
+from .liushen import apply_liushen
 
 
 def paipan(dt: Optional[datetime] = None, question: str = "") -> dict:
-    """自动排盘：公历时间 → 完整卦象
-
-    Args:
-        dt: 日期时间，None 则用当前时间
-        question: 用户问题
-
-    Returns:
-        标准卦象 dict，字段对齐 HexagramData 模型
-    """
+    """自动排盘：公历时间 → 完整卦象"""
     if dt is None:
         dt = datetime.now()
 
@@ -43,7 +36,11 @@ def paipan(dt: Optional[datetime] = None, question: str = "") -> dict:
     # 6. 空亡
     apply_xunkong(yao_lines, sizhu["day"])
 
-    # 7. 变卦六爻处理（含变爻纳甲）
+    # 7. 六神
+    day_gan = sizhu["day"][0]
+    apply_liushen(yao_lines, day_gan)
+
+    # 8. 变卦六爻处理
     changed_lines = _build_changed_lines(hex_data, sizhu)
 
     return {
@@ -66,7 +63,7 @@ def paipan(dt: Optional[datetime] = None, question: str = "") -> dict:
 
 
 def _build_changed_lines(hex_data: dict, sizhu: dict) -> list[dict]:
-    """构建变卦的六爻信息（含纳甲、六亲、世应、空亡）"""
+    """构建变卦的六爻信息（含纳甲、六亲、世应、空亡、六神）"""
     changing = hex_data["changing_positions"]
     if not changing:
         return []
@@ -79,13 +76,6 @@ def _build_changed_lines(hex_data: dict, sizhu: dict) -> list[dict]:
     apply_shiying(changed_yao, changed_shi)
     apply_liuqin(changed_yao, changed_shi)
     apply_xunkong(changed_yao, sizhu["day"])
+    apply_liushen(changed_yao, sizhu["day"][0])
 
     return changed_yao
-
-
-# ── 测试入口 ──
-if __name__ == "__main__":
-    import json
-    now = datetime.now()
-    result = paipan(now, "测试排盘")
-    print(json.dumps(result, ensure_ascii=False, indent=2))
