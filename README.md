@@ -131,7 +131,21 @@ hexa-agent/
 - Node.js 18+
 - DeepSeek API Key（或任意兼容 OpenAI 接口的 Key）
 
-### 后端安装
+### 一键启动
+
+```bash
+# Windows 直接双击运行
+start.bat
+
+# macOS / Linux / Git Bash
+./start.sh
+```
+
+两个服务会自动启动：
+- 后端 API → http://localhost:8000/docs
+- 前端 UI → http://localhost:5173
+
+### 手动安装
 
 ```bash
 cd backend
