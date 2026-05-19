@@ -1,0 +1,17 @@
+@import "tailwindcss";
+
+body {
+  margin: 0;
+  background: #0f0f1a;
+  color: #e5e5e5;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+/* 卦象编辑器自定义滚动条 */
+.yao-editor::-webkit-scrollbar {
+  width: 6px;
+}
+.yao-editor::-webkit-scrollbar-thumb {
+  background: #374151;
+  border-radius: 3px;
+}
