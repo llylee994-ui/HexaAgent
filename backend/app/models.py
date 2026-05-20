@@ -13,6 +13,8 @@ class YaoLine(BaseModel):
     shi_ying: Optional[Literal["shi", "ying"]] = None
     xun_kong: bool = False
     liushen: str = ""
+    fush_liuqin: str = ""
+    fush_zhi: str = ""
 
 
 class Sizhu(BaseModel):

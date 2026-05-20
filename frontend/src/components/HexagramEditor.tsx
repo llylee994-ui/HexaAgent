@@ -3,18 +3,11 @@ import { HEXAGRAM_NAMES, getHexagramYao } from '../utils/hexagrams'
 import SearchableSelect from './SearchableSelect'
 import YaoLineRow from './YaoLineRow'
 
-/** 根据本卦 lines 生成变卦 lines：动爻翻转阴阳 */
-function deriveChangedLines(lines: import('../types').YaoLine[]) {
-  return lines.map((l) => ({
-    ...l,
-    changing: false,
-    type: l.changing ? (l.type === 'yang' ? 'yin' as const : 'yang' as const) : l.type,
-  }))
-}
-
 export default function HexagramEditor() {
   const lines = useChatStore((s) => s.lines)
+  const changedLines = useChatStore((s) => s.changedLines)
   const updateYaoLine = useChatStore((s) => s.updateYaoLine)
+  const updateChangedLine = useChatStore((s) => s.updateChangedLine)
   const resetLines = useChatStore((s) => s.resetLines)
   const sizhuYear = useChatStore((s) => s.sizhuYear)
   const sizhuMonth = useChatStore((s) => s.sizhuMonth)
@@ -27,8 +20,8 @@ export default function HexagramEditor() {
   const setBeizhu = useChatStore((s) => s.setBeizhu)
 
   const hasChanging = lines.some((l) => l.changing)
-  const changedLines = hasChanging ? deriveChangedLines(lines) : []
   const orderedLines = [...lines].reverse()
+  const orderedChanged = [...changedLines].reverse()
 
   const handlePreset = (name: string) => {
     if (!name) return
@@ -102,21 +95,19 @@ export default function HexagramEditor() {
             key={line.position}
             line={line}
             onChange={(field) => updateYaoLine(line.position, field)}
-            isAutoMode={false}
           />
         ))}
       </div>
 
-      {/* 变卦表（有动爻时显示） */}
+      {/* 变卦表（有动爻时显示，可独立编辑六亲/地支，六神继承） */}
       {hasChanging && (
         <div className="bg-gray-900/50 rounded-lg px-2 py-1 border border-red-500/20">
-          <div className="text-[10px] text-red-400/70 mb-1 px-7">— 变卦（动爻翻转后） —</div>
-          {[...changedLines].reverse().map((line) => (
+          <div className="text-[10px] text-red-400/70 mb-1 px-7">— 变卦（六神继承本卦，六亲/地支请手动填写） —</div>
+          {orderedChanged.map((line) => (
             <YaoLineRow
               key={line.position}
               line={line}
-              onChange={() => {}}
-              isAutoMode={false}
+              onChange={(field) => updateChangedLine(line.position, field)}
               isChanged={true}
             />
           ))}

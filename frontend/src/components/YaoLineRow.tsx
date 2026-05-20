@@ -22,7 +22,11 @@ export default function YaoLineRow({ line, onChange, isAutoMode, isChanged }: Pr
         <span className="w-7 text-gray-500 text-center">{posLabel}</span>
 
         {/* 六神 */}
-        {!readOnly ? (
+        {isChanged ? (
+          <span className="w-10 text-center text-[10px] text-amber-500/50" title="继承自本卦">
+            {line.liushen ? `${line.liushen}` : '继承'}
+          </span>
+        ) : !readOnly ? (
           <select
             value={line.liushen}
             onChange={(e) => onChange({ liushen: e.target.value })}

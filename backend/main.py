@@ -40,31 +40,103 @@ def api_paipan(request: ChatRequest):
     return result
 
 
+def _format_hexagram_text(hd: HexagramData) -> str:
+    """将 HexagramData 格式化为六爻师能读懂的中文文本"""
+    lines = []
+    lines.append("=== 卦象数据 ===")
+
+    # 四柱
+    if hd.sizhu:
+        lines.append(f"四柱：{hd.sizhu.year}年 {hd.sizhu.month}月 {hd.sizhu.day}日 {hd.sizhu.hour}时")
+    if hd.yue_jian:
+        lines.append(f"月建：{hd.yue_jian}")
+    if hd.ri_chen:
+        lines.append(f"日辰：{hd.ri_chen}")
+    if hd.xun_kong:
+        lines.append(f"空亡：{'、'.join(hd.xun_kong)}")
+
+    # 本卦
+    POS_LABEL = {1: "初爻", 2: "二爻", 3: "三爻", 4: "四爻", 5: "五爻", 6: "上爻"}
+
+    lines.append(f"\n—— 本卦（{hd.hexagram_name or '未命名'}）——")
+    yao_display = sorted(hd.yao_lines, key=lambda l: l.position, reverse=True)
+    for yao in yao_display:
+        parts = [POS_LABEL.get(yao.position, f"爻{yao.position}")]
+        # 六神
+        if yao.liushen:
+            parts.append(f"[{yao.liushen}]")
+        # 阴阳 + 动爻
+        yin_yang = "⚊阳" if yao.type == "yang" else "⚋阴"
+        if yao.changing:
+            yin_yang += " ○动"
+        parts.append(yin_yang)
+        # 干支五行
+        if yao.gan and yao.zhi:
+            parts.append(f"{yao.gan}{yao.zhi}（{yao.wuxing}）")
+        elif yao.zhi:
+            parts.append(f"{yao.zhi}（{yao.wuxing}）")
+        # 六亲
+        if yao.liuqin:
+            parts.append(yao.liuqin)
+        # 世应
+        if yao.shi_ying == "shi":
+            parts.append("【世爻】")
+        elif yao.shi_ying == "ying":
+            parts.append("【应爻】")
+        # 空亡
+        if yao.xun_kong:
+            parts.append("（旬空）")
+        # 伏神
+        if yao.fush_liuqin or yao.fush_zhi:
+            fush = "伏神："
+            if yao.fush_liuqin:
+                fush += yao.fush_liuqin
+            if yao.fush_zhi:
+                fush += f" {yao.fush_zhi}"
+            parts.append(f"【{fush}】")
+
+        lines.append("  " + " ".join(parts))
+
+    # 变卦
+    if hd.changed_lines:
+        lines.append(f"\n—— 变卦（{hd.changed_to or '未命名'}）——")
+        changed_display = sorted(hd.changed_lines, key=lambda l: l.position, reverse=True)
+        for yao in changed_display:
+            parts = [POS_LABEL.get(yao.position, f"爻{yao.position}")]
+            if yao.liushen:
+                parts.append(f"[{yao.liushen}（继承）]")
+            yin_yang = "⚊阳" if yao.type == "yang" else "⚋阴"
+            parts.append(yin_yang)
+            if yao.gan and yao.zhi:
+                parts.append(f"{yao.gan}{yao.zhi}（{yao.wuxing}）")
+            elif yao.zhi:
+                parts.append(f"{yao.zhi}（{yao.wuxing}）")
+            if yao.liuqin:
+                parts.append(yao.liuqin)
+            if yao.shi_ying == "shi":
+                parts.append("【世爻】")
+            elif yao.shi_ying == "ying":
+                parts.append("【应爻】")
+            lines.append("  " + " ".join(parts))
+
+    return "\n".join(lines)
+
+
 @app.post("/api/chat")
 async def api_chat(request: ChatRequest):
     """聊天接口：Agent 排盘 + 断卦一体化"""
     import traceback
 
-    if request.mode == "manual" and request.hexagram_data:
-        hex_json = request.hexagram_data.model_dump_json(indent=2)
-        user_message = f"""用户手动提供了以下卦象数据，请跳过排盘直接解读：
-
-卦象数据：
-{hex_json}
-
-用户问题：{request.message}
-
-请直接分析卦象并给出解读。"""
-    elif request.mode == "text" and request.hexagram_data:
-        hex_json = request.hexagram_data.model_dump_json(indent=2)
-        user_message = f"""用户以文本模式提供了以下卦象，请跳过排盘直接解读：
-
-卦象数据：
-{hex_json}
-
-用户问题：{request.message}
-
-请直接分析卦象并给出解读。"""
+    if request.mode in ("manual", "text") and request.hexagram_data:
+        # 手动/文本模式：将卦象转为可读文本喂给 AI
+        hex_text = _format_hexagram_text(request.hexagram_data)
+        user_message = (
+            "用户通过手动排盘提供了以下卦象数据。"
+            "请直接分析这些数据并给出六爻断卦解读，无需调用排盘工具。\n\n"
+            f"{hex_text}\n\n"
+            f"用户问题：{request.message}\n\n"
+            "请根据以上卦象数据进行完整解读。注意：如果数据中标注了伏神，请在分析时考虑伏神的含义。"
+        )
     else:
         now_str = f"当前时间是 {__import__('datetime').datetime.now().strftime('%Y年%m月%d日 %H:%M')}"
         user_message = f"{now_str}。用户问题：{request.message}"
@@ -93,7 +165,6 @@ async def api_chat(request: ChatRequest):
         if t == "tool":
             name = getattr(msg, "name", "unknown")
             thinking_chain.append(f"调用工具: {name}")
-            # 尝试从工具返回中解析卦象 JSON
             tool_content = getattr(msg, "content", "")
             try:
                 if isinstance(tool_content, str) and "hexagram_name" in tool_content:
@@ -101,7 +172,6 @@ async def api_chat(request: ChatRequest):
             except Exception:
                 pass
         elif t == "ai":
-            # 跳过工具调用消息（content 为空，tool_calls 非空）
             if hasattr(msg, "tool_calls") and msg.tool_calls:
                 tool_names = [tc.get("name", "") for tc in msg.tool_calls]
                 thinking_chain.append(f"Agent 决定调用: {', '.join(tool_names)}")
