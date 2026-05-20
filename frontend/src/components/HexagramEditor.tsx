@@ -45,13 +45,14 @@ export default function HexagramEditor() {
   const handleAutoFillSizhu = async () => {
     try {
       const res = await fetch('/api/sizhu')
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const d = await res.json()
       setSizhu('year', d.year)
       setSizhu('month', d.month)
       setSizhu('day', d.day)
       setSizhu('hour', d.hour)
-    } catch {
-      // ignore
+    } catch (err) {
+      alert(`自动填充失败：请确认后端已启动（http://127.0.0.1:8000）`)
     }
   }
 
