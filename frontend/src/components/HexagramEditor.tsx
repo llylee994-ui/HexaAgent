@@ -1,5 +1,5 @@
 import { useChatStore } from '../stores/useChatStore'
-import { HEXAGRAM_NAMES, getHexagramYao } from '../utils/hexagrams'
+import { HEXAGRAM_NAMES, getHexagramYao, getTrigramPair, getHexagramNazhi } from '../utils/hexagrams'
 import SearchableSelect from './SearchableSelect'
 import YaoLineRow from './YaoLineRow'
 
@@ -27,8 +27,10 @@ export default function HexagramEditor() {
     if (!name) return
     const yao = getHexagramYao(name)
     if (yao.length === 0) return
+    const nazhi = getHexagramNazhi(name)
     yao.forEach((type, i) => {
-      updateYaoLine(i + 1, { type, changing: false, liuqin: '', zhi: '', shi_ying: null })
+      const [gan, zhi] = nazhi[i] || ['', '']
+      updateYaoLine(i + 1, { type, changing: false, gan, zhi, liuqin: '', shi_ying: null })
     })
   }
 

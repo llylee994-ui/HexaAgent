@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import type { ChatMessage, YaoLine, HexagramData } from '../types'
-import { getLiushenByDayGan, getKongWang } from '../utils/hexagrams'
+import { getLiushenByDayGan, getKongWang, findTrigramByLines, getHexagramName, getHexagramNazhi } from '../utils/hexagrams'
 
 const emptyYaoLine = (pos: number): YaoLine => ({
   position: pos,
@@ -19,9 +19,10 @@ const emptyYaoLine = (pos: number): YaoLine => ({
 
 const initialLines: YaoLine[] = [1, 2, 3, 4, 5, 6].map(emptyYaoLine)
 
-/** 根据本卦 lines 生成本卦 changedLines：动爻翻转阴阳，六神继承 */
-function syncChangedLines(lines: YaoLine[], prev: YaoLine[]): YaoLine[] {
-  return lines.map((l, i) => {
+/** 根据本卦 lines 生成变卦 changedLines：动爻翻转阴阳，自动识别卦名并填充纳支 */
+function syncChangedLines(lines: YaoLine[], prev: YaoLine[], existingDayGan?: string): YaoLine[] {
+  // Step 1: 翻转阴阳
+  const flipped = lines.map((l, i) => {
     const prevLine = prev[i]
     const newType = l.changing ? (l.type === 'yang' ? 'yin' as const : 'yang' as const) : l.type
     const typeChanged = prevLine && prevLine.type !== newType
@@ -30,8 +31,7 @@ function syncChangedLines(lines: YaoLine[], prev: YaoLine[]): YaoLine[] {
       position: l.position,
       type: newType,
       changing: false,
-      liushen: l.liushen, // 继承本卦六神
-      // 如果阴阳变了，保留用户之前编辑的六亲和地支，不清空
+      liushen: l.liushen,
       liuqin: typeChanged ? (prevLine.liuqin || '') : (prevLine.liuqin || ''),
       zhi: typeChanged ? (prevLine.zhi || '') : (prevLine.zhi || ''),
       gan: '',
@@ -42,6 +42,27 @@ function syncChangedLines(lines: YaoLine[], prev: YaoLine[]): YaoLine[] {
       fush_zhi: '',
     }
   })
+
+  // Step 2: 识别变卦的上下卦 → 卦名 → 纳支自动填充
+  const lowerLines = flipped.slice(0, 3).map(l => l.type)
+  const upperLines = flipped.slice(3, 6).map(l => l.type)
+  const lowerTrigram = findTrigramByLines(lowerLines)
+  const upperTrigram = findTrigramByLines(upperLines)
+  if (lowerTrigram && upperTrigram) {
+    const hexName = getHexagramName(upperTrigram, lowerTrigram)
+    if (hexName) {
+      const nazhi = getHexagramNazhi(hexName)
+      if (nazhi.length === 6) {
+        return flipped.map((l, i) => ({
+          ...l,
+          gan: nazhi[i][0],
+          zhi: nazhi[i][1],
+        }))
+      }
+    }
+  }
+
+  return flipped
 }
 
 interface ChatState {
