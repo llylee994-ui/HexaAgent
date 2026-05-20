@@ -118,24 +118,50 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
   updateYaoLine: (pos, field) =>
     set((s) => {
-      const pw = s.benGuaPalaceWuxing
-      // 如果改了地支且有卦宫五行，自动算六亲; 如果改了卦宫相关，全部重算
-      const newLines = s.lines.map((l) => {
+      // 1. 更新目标爻
+      let nLines = s.lines.map((l) => {
         if (l.position !== pos) return l
         const updated = { ...l, ...field }
-        if (updated.zhi && pw) updated.liuqin = getLiuqin(pw, updated.zhi)
+        if (updated.zhi && s.benGuaPalaceWuxing) updated.liuqin = getLiuqin(s.benGuaPalaceWuxing, updated.zhi)
         if (updated.zhi) updated.wuxing = getZhiWuxing(updated.zhi)
         return updated
       })
-      const newChanged = syncChangedLines(newLines, s.changedLines)
-      // 变卦六亲始终用本卦卦宫
-      if (pw) {
+      // 2. 尝试从六爻阴阳检测卦名 → 自动填充纳支和六亲
+      let newName = s.benGuaName
+      let newPw = s.benGuaPalaceWuxing
+      const lowerTypes = nLines.slice(0, 3).map(l => l.type)
+      const upperTypes = nLines.slice(3, 6).map(l => l.type)
+      const lt = findTrigramByLines(lowerTypes)
+      const ut = findTrigramByLines(upperTypes)
+      if (lt && ut) {
+        const detected = getHexagramName(ut, lt)
+        if (detected && detected !== s.benGuaName) {
+          newName = detected
+          newPw = getHexagramPalaceWuxing(detected)
+          // 自动填充纳支和六亲
+          const nazhi = getHexagramNazhi(detected)
+          if (nazhi.length === 6) {
+            nLines = nLines.map((l, i) => ({
+              ...l,
+              gan: nazhi[i][0],
+              zhi: nazhi[i][1],
+              wuxing: getZhiWuxing(nazhi[i][1]),
+              liuqin: newPw ? getLiuqin(newPw, nazhi[i][1]) : l.liuqin,
+            }))
+          }
+        }
+      } else {
+        newName = ''
+        newPw = ''
+      }
+      // 3. 同步变卦
+      const newChanged = syncChangedLines(nLines, s.changedLines)
+      if (newPw) {
         for (const cl of newChanged) {
-          if (cl.zhi) cl.liuqin = getLiuqin(pw, cl.zhi)
-          if (cl.zhi) cl.wuxing = getZhiWuxing(cl.zhi)
+          if (cl.zhi) { cl.liuqin = getLiuqin(newPw, cl.zhi); cl.wuxing = getZhiWuxing(cl.zhi) }
         }
       }
-      return { lines: newLines, changedLines: newChanged }
+      return { lines: nLines, changedLines: newChanged, benGuaName: newName, benGuaPalaceWuxing: newPw }
     }),
 
   updateChangedLine: (pos, field) =>
@@ -210,6 +236,11 @@ export const useChatStore = create<ChatState>((set, get) => ({
       changedLines: [1, 2, 3, 4, 5, 6].map(() => emptyYaoLine(0)),
       benGuaName: '',
       benGuaPalaceWuxing: '',
+      sizhuYear: '',
+      sizhuMonth: '',
+      sizhuDay: '',
+      sizhuHour: '',
+      kongWang: '',
     }),
 
   addMessage: (msg) =>
