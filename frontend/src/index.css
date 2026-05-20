@@ -7,13 +7,23 @@ body {
   font-family: system-ui, -apple-system, sans-serif;
 }
 
-/* 卦象编辑器自定义滚动条 */
-.yao-editor::-webkit-scrollbar {
-  width: 6px;
+/* 全局滚动条样式 — 细窄深色 */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
 }
-.yao-editor::-webkit-scrollbar-thumb {
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
   background: #374151;
   border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #4b5563;
+}
+::-webkit-scrollbar-corner {
+  background: transparent;
 }
 
 /* Markdown 渲染样式 */

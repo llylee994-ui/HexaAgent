@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import type { YaoLine } from '../types'
 import { DIZHI_OPTIONS, LIUQIN_OPTIONS, LIUSHEN } from '../utils/hexagrams'
-import MiniSelect from './MiniSelect'
 
 interface Props {
   line: YaoLine
@@ -14,7 +13,7 @@ export default function YaoLineRow({ line, onChange, isAutoMode, isChanged }: Pr
   const [showFush, setShowFush] = useState(false)
   const posLabel = ['', '初', '二', '三', '四', '五', '上'][line.position]
   const hasFush = line.fush_liuqin || line.fush_zhi
-  const readOnly = isAutoMode  // 仅自动模式完全不可编辑
+  const readOnly = isAutoMode
 
   return (
     <div className="border-b border-gray-800">
@@ -32,13 +31,16 @@ export default function YaoLineRow({ line, onChange, isAutoMode, isChanged }: Pr
             {line.liushen || '—'}
           </span>
         ) : (
-          <MiniSelect
+          <select
             value={line.liushen}
-            options={LIUSHEN}
-            onChange={(v) => onChange({ liushen: v })}
-            placeholder="六神"
-            className="w-11"
-          />
+            onChange={(e) => onChange({ liushen: e.target.value })}
+            className="bg-gray-800 border border-gray-700 rounded px-0.5 py-0.5 text-[10px] text-amber-500/80 w-11"
+          >
+            <option value="">-</option>
+            {LIUSHEN.map((ls) => (
+              <option key={ls} value={ls}>{ls}</option>
+            ))}
+          </select>
         )}
 
         {/* 阴阳 */}
@@ -71,35 +73,43 @@ export default function YaoLineRow({ line, onChange, isAutoMode, isChanged }: Pr
           <span className={line.changing ? 'text-red-400 text-[10px]' : 'text-gray-600 text-[10px]'}>动</span>
         </label>
 
-        {/* 六亲 — 变卦模式下仍然可编辑 */}
-        <MiniSelect
+        {/* 六亲 — 变卦模式下仍可编辑 */}
+        <select
           value={line.liuqin}
-          options={LIUQIN_OPTIONS}
-          onChange={(v) => onChange({ liuqin: v })}
-          placeholder="六亲"
-          className="w-14"
+          onChange={(e) => onChange({ liuqin: e.target.value })}
           disabled={readOnly}
-        />
+          className="bg-gray-800 border border-gray-700 rounded px-1 py-0.5 text-[10px] text-gray-300 w-14 disabled:opacity-40"
+        >
+          <option value="">六亲</option>
+          {LIUQIN_OPTIONS.map((lq) => (
+            <option key={lq} value={lq}>{lq}</option>
+          ))}
+        </select>
 
-        {/* 地支 — 变卦模式下仍然可编辑 */}
-        <MiniSelect
+        {/* 地支 — 变卦模式下仍可编辑 */}
+        <select
           value={line.zhi}
-          options={DIZHI_OPTIONS}
-          onChange={(v) => onChange({ zhi: v })}
-          placeholder="地支"
-          className="w-12"
+          onChange={(e) => onChange({ zhi: e.target.value })}
           disabled={readOnly}
-        />
+          className="bg-gray-800 border border-gray-700 rounded px-1 py-0.5 text-[10px] text-gray-300 w-12 disabled:opacity-40"
+        >
+          <option value="">地</option>
+          {DIZHI_OPTIONS.map((dz) => (
+            <option key={dz} value={dz}>{dz}</option>
+          ))}
+        </select>
 
-        {/* 世应 — 变卦模式下不可编辑（不重要） */}
-        <MiniSelect
+        {/* 世应 — 变卦模式下不可编辑 */}
+        <select
           value={line.shi_ying || ''}
-          options={['世', '应']}
-          onChange={(v) => onChange({ shi_ying: (v || null) as 'shi' | 'ying' | null })}
-          placeholder="-"
-          className="w-12"
+          onChange={(e) => onChange({ shi_ying: (e.target.value || null) as 'shi' | 'ying' | null })}
           disabled={readOnly || isChanged}
-        />
+          className="bg-gray-800 border border-gray-700 rounded px-0.5 py-0.5 text-[10px] text-gray-300 w-12 disabled:opacity-40"
+        >
+          <option value="">-</option>
+          <option value="shi">世</option>
+          <option value="ying">应</option>
+        </select>
 
         {/* 伏神展开 */}
         {!readOnly && !isChanged && (
@@ -117,20 +127,26 @@ export default function YaoLineRow({ line, onChange, isAutoMode, isChanged }: Pr
       {showFush && !readOnly && !isChanged && (
         <div className="flex items-center gap-1.5 px-16 py-1 bg-purple-500/5 text-[10px]">
           <span className="text-purple-400">伏神</span>
-          <MiniSelect
+          <select
             value={line.fush_liuqin || ''}
-            options={LIUQIN_OPTIONS}
-            onChange={(v) => onChange({ fush_liuqin: v })}
-            placeholder="六亲"
-            className="w-14"
-          />
-          <MiniSelect
+            onChange={(e) => onChange({ fush_liuqin: e.target.value })}
+            className="bg-gray-800 border border-gray-700 rounded px-1 py-0.5 text-purple-300 w-14"
+          >
+            <option value="">六亲</option>
+            {LIUQIN_OPTIONS.map((lq) => (
+              <option key={lq} value={lq}>{lq}</option>
+            ))}
+          </select>
+          <select
             value={line.fush_zhi || ''}
-            options={DIZHI_OPTIONS}
-            onChange={(v) => onChange({ fush_zhi: v })}
-            placeholder="地支"
-            className="w-12"
-          />
+            onChange={(e) => onChange({ fush_zhi: e.target.value })}
+            className="bg-gray-800 border border-gray-700 rounded px-1 py-0.5 text-purple-300 w-12"
+          >
+            <option value="">地支</option>
+            {DIZHI_OPTIONS.map((dz) => (
+              <option key={dz} value={dz}>{dz}</option>
+            ))}
+          </select>
         </div>
       )}
     </div>
