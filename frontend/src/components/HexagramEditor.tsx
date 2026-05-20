@@ -76,45 +76,7 @@ export default function HexagramEditor() {
         </button>
       </div>
 
-      {/* 表头 */}
-      <div className="flex items-center gap-1.5 px-1 text-[10px] text-gray-600">
-        <span className="w-7 text-center">爻</span>
-        <span className="w-10 text-center">六神</span>
-        <span className="w-12 text-center">阴阳</span>
-        <span className="w-8 text-center">动</span>
-        <span className="w-14 text-center">六亲</span>
-        <span className="w-12 text-center">地支</span>
-        <span className="w-12 text-center">世应</span>
-      </div>
-
-      {/* 本卦表 */}
-      <div className="bg-gray-900/50 rounded-lg px-2 py-1">
-        <div className="text-[10px] text-amber-500/60 mb-1 px-7">— 本卦 —</div>
-        {orderedLines.map((line) => (
-          <YaoLineRow
-            key={line.position}
-            line={line}
-            onChange={(field) => updateYaoLine(line.position, field)}
-          />
-        ))}
-      </div>
-
-      {/* 变卦表（有动爻时显示，可独立编辑六亲/地支，六神继承） */}
-      {hasChanging && (
-        <div className="bg-gray-900/50 rounded-lg px-2 py-1 border border-red-500/20">
-          <div className="text-[10px] text-red-400/70 mb-1 px-7">— 变卦（六神继承本卦，六亲/地支请手动填写） —</div>
-          {orderedChanged.map((line) => (
-            <YaoLineRow
-              key={line.position}
-              line={line}
-              onChange={(field) => updateChangedLine(line.position, field)}
-              isChanged={true}
-            />
-          ))}
-        </div>
-      )}
-
-      {/* 干支（四柱）+ 自动填充 */}
+      {/* 干支（四柱）+ 空亡 */}
       <div className="space-y-2 text-xs">
         <div>
           <div className="flex items-center justify-between mb-1">
@@ -162,15 +124,55 @@ export default function HexagramEditor() {
             className="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1.5 text-gray-300 text-xs"
           />
         </div>
-        <div>
-          <label className="text-gray-500 block mb-1">备注</label>
-          <textarea
-            value={beizhu}
-            onChange={(e) => setBeizhu(e.target.value)}
-            placeholder="任何需要补充的信息，如伏神说明、特殊状态等"
-            className="w-full h-16 bg-gray-800 border border-gray-700 rounded px-2 py-1.5 text-gray-300 text-xs resize-none"
+      </div>
+
+      {/* 表头 */}
+      <div className="flex items-center gap-1.5 px-1 text-[10px] text-gray-600">
+        <span className="w-7 text-center">爻</span>
+        <span className="w-10 text-center">六神</span>
+        <span className="w-12 text-center">阴阳</span>
+        <span className="w-8 text-center">动</span>
+        <span className="w-14 text-center">六亲</span>
+        <span className="w-12 text-center">地支</span>
+        <span className="w-12 text-center">世应</span>
+      </div>
+
+      {/* 本卦表 */}
+      <div className="bg-gray-900/50 rounded-lg px-2 py-1">
+        <div className="text-[10px] text-amber-500/60 mb-1 px-7">— 本卦 —</div>
+        {orderedLines.map((line) => (
+          <YaoLineRow
+            key={line.position}
+            line={line}
+            onChange={(field) => updateYaoLine(line.position, field)}
           />
+        ))}
+      </div>
+
+      {/* 变卦表 */}
+      {hasChanging && (
+        <div className="bg-gray-900/50 rounded-lg px-2 py-1 border border-red-500/20">
+          <div className="text-[10px] text-red-400/70 mb-1 px-7">— 变卦（六神继承本卦，六亲/地支请手动填写） —</div>
+          {orderedChanged.map((line) => (
+            <YaoLineRow
+              key={line.position}
+              line={line}
+              onChange={(field) => updateChangedLine(line.position, field)}
+              isChanged={true}
+            />
+          ))}
         </div>
+      )}
+
+      {/* 备注 */}
+      <div className="text-xs">
+        <label className="text-gray-500 block mb-1">备注</label>
+        <textarea
+          value={beizhu}
+          onChange={(e) => setBeizhu(e.target.value)}
+          placeholder="任何需要补充的信息，如伏神说明、特殊状态等"
+          className="w-full h-16 bg-gray-800 border border-gray-700 rounded px-2 py-1.5 text-gray-300 text-xs resize-none"
+        />
       </div>
     </div>
   )

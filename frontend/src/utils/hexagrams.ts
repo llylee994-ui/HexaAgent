@@ -58,3 +58,19 @@ export const HEXAGRAM_NAMES = Object.keys(HEXAGRAM_TRIGRAMS)
 export const DIZHI_OPTIONS = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥']
 export const LIUQIN_OPTIONS = ['父母', '兄弟', '妻财', '官鬼', '子孙']
 export const LIUSHEN = ['青龙', '朱雀', '勾陈', '腾蛇', '白虎', '玄武']
+
+// 日干→六神起始索引（甲乙起青龙，丙丁起朱雀...）
+const LIUSHEN_START: Record<string, number> = {
+  '甲': 0, '乙': 0,
+  '丙': 1, '丁': 1,
+  '戊': 2,
+  '己': 3,
+  '庚': 4, '辛': 4,
+  '壬': 5, '癸': 5,
+}
+
+/** 根据日干返回初爻→上爻的六神列表（index 0=初爻, 5=上爻） */
+export function getLiushenByDayGan(dayGan: string): string[] {
+  const start = LIUSHEN_START[dayGan] ?? 0
+  return Array.from({ length: 6 }, (_, i) => LIUSHEN[(start + i) % 6])
+}
