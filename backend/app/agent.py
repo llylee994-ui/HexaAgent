@@ -9,6 +9,7 @@ from langgraph.prebuilt import create_react_agent
 
 from .config import DEEPSEEK_API_KEY, DEEPSEEK_BASE_URL, MODEL_NAME
 from .core.paipan import paipan
+from .models import HexagramData
 
 SYSTEM_PROMPT = """你是一位精通六爻预测的卦师。你的解卦流程如下：
 
@@ -30,6 +31,79 @@ SYSTEM_PROMPT = """你是一位精通六爻预测的卦师。你的解卦流程�
 4. 注意：你只基于卦象数据进行解读，不要编造没有的信息。"""
 
 
+# ── 格式化函数（与 main.py 共用）─────────────────
+POS_LABEL = {1: "初爻", 2: "二爻", 3: "三爻", 4: "四爻", 5: "五爻", 6: "上爻"}
+
+
+def format_hexagram_text(hd: HexagramData) -> str:
+    """将 HexagramData 格式化为六爻师能读懂的中文文本"""
+    lines = []
+    lines.append("=== 卦象数据 ===")
+
+    if hd.sizhu:
+        lines.append(f"四柱：{hd.sizhu.year}年 {hd.sizhu.month}月 {hd.sizhu.day}日 {hd.sizhu.hour}时")
+    if hd.yue_jian:
+        lines.append(f"月建：{hd.yue_jian}")
+    if hd.ri_chen:
+        lines.append(f"日辰：{hd.ri_chen}")
+    if hd.xun_kong:
+        lines.append(f"空亡：{'、'.join(hd.xun_kong)}")
+
+    lines.append(f"\n—— 本卦（{hd.hexagram_name or '未命名'}）——")
+    yao_display = sorted(hd.yao_lines, key=lambda l: l.position, reverse=True)
+    for yao in yao_display:
+        parts = [POS_LABEL.get(yao.position, f"爻{yao.position}")]
+        if yao.liushen:
+            parts.append(f"[{yao.liushen}]")
+        yin_yang = "⚊阳" if yao.type == "yang" else "⚋阴"
+        if yao.changing:
+            yin_yang += " ○动"
+        parts.append(yin_yang)
+        if yao.gan and yao.zhi:
+            parts.append(f"{yao.gan}{yao.zhi}（{yao.wuxing}）")
+        elif yao.zhi:
+            parts.append(f"{yao.zhi}（{yao.wuxing}）")
+        if yao.liuqin:
+            parts.append(yao.liuqin)
+        if yao.shi_ying == "shi":
+            parts.append("【世爻】")
+        elif yao.shi_ying == "ying":
+            parts.append("【应爻】")
+        if yao.xun_kong:
+            parts.append("（旬空）")
+        if yao.fush_liuqin or yao.fush_zhi:
+            fush = "伏神："
+            if yao.fush_liuqin:
+                fush += yao.fush_liuqin
+            if yao.fush_zhi:
+                fush += f" {yao.fush_zhi}"
+            parts.append(f"【{fush}】")
+        lines.append("  " + " ".join(parts))
+
+    if hd.changed_lines:
+        lines.append(f"\n—— 变卦（{hd.changed_to or '未命名'}）——")
+        changed_display = sorted(hd.changed_lines, key=lambda l: l.position, reverse=True)
+        for yao in changed_display:
+            parts = [POS_LABEL.get(yao.position, f"爻{yao.position}")]
+            if yao.liushen:
+                parts.append(f"[{yao.liushen}（继承）]")
+            yin_yang = "⚊阳" if yao.type == "yang" else "⚋阴"
+            parts.append(yin_yang)
+            if yao.gan and yao.zhi:
+                parts.append(f"{yao.gan}{yao.zhi}（{yao.wuxing}）")
+            elif yao.zhi:
+                parts.append(f"{yao.zhi}（{yao.wuxing}）")
+            if yao.liuqin:
+                parts.append(yao.liuqin)
+            if yao.shi_ying == "shi":
+                parts.append("【世爻】")
+            elif yao.shi_ying == "ying":
+                parts.append("【应爻】")
+            lines.append("  " + " ".join(parts))
+
+    return "\n".join(lines)
+
+
 @tool
 def get_hexagram(date_str: str, time_str: str, question: str = "") -> str:
     """六爻排盘工具：根据公历日期时间起卦排盘。
@@ -40,7 +114,7 @@ def get_hexagram(date_str: str, time_str: str, question: str = "") -> str:
         question: 用户的问题（可选）
 
     Returns:
-        完整的卦象 JSON 字符串，包含卦名、六爻纳甲、世应、六亲、空亡、变卦等信息
+        完整的卦象中文文本，包含卦名、六爻纳甲、世应、六亲、空亡、变卦等信息
     """
     try:
         dt = datetime.strptime(f"{date_str} {time_str}", "%Y-%m-%d %H:%M")
@@ -48,7 +122,10 @@ def get_hexagram(date_str: str, time_str: str, question: str = "") -> str:
         return json.dumps({"error": "日期格式错误，请使用 YYYY-MM-DD HH:MM 格式"}, ensure_ascii=False)
 
     result = paipan(dt, question)
-    return json.dumps(result, ensure_ascii=False, indent=2)
+    hd = HexagramData.model_validate(result)
+    formatted = format_hexagram_text(hd)
+    # 嵌入原始 JSON 供后端提取卦象卡片数据
+    return f"{formatted}\n\n<!--RAW_HEXAGRAM\n{json.dumps(result, ensure_ascii=False)}\nRAW_HEXAGRAM-->"
 
 
 def create_agent():
