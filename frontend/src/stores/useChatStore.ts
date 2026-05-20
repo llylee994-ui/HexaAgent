@@ -12,6 +12,8 @@ const emptyYaoLine = (pos: number): YaoLine => ({
   shi_ying: null,
   xun_kong: false,
   liushen: '',
+  fush_liuqin: '',
+  fush_zhi: '',
 })
 
 const initialLines: YaoLine[] = [1, 2, 3, 4, 5, 6].map(emptyYaoLine)
@@ -25,6 +27,7 @@ interface ChatState {
   sizhuDay: string
   sizhuHour: string
   kongWang: string
+  beizhu: string
   textInput: string
   isLoading: boolean
   thinkingChain: string[]
@@ -33,6 +36,7 @@ interface ChatState {
   updateYaoLine: (pos: number, field: Partial<YaoLine>) => void
   setSizhu: (field: 'year' | 'month' | 'day' | 'hour', value: string) => void
   setKongWang: (v: string) => void
+  setBeizhu: (v: string) => void
   setTextInput: (v: string) => void
   resetLines: () => void
   addMessage: (msg: ChatMessage) => void
@@ -50,6 +54,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
   sizhuDay: '',
   sizhuHour: '',
   kongWang: '',
+  beizhu: '',
   textInput: '',
   isLoading: false,
   thinkingChain: [],
@@ -70,6 +75,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     })),
 
   setKongWang: (v) => set({ kongWang: v }),
+  setBeizhu: (v) => set({ beizhu: v }),
   setTextInput: (v) => set({ textInput: v }),
 
   resetLines: () => set({ lines: [1, 2, 3, 4, 5, 6].map(emptyYaoLine) }),
@@ -90,7 +96,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
       liuqin: l.liuqin || '',
       shi_ying: l.shi_ying || null,
       xun_kong: false,
-      liushen: '',
+      liushen: l.liushen || '',
+      fush_liuqin: l.fush_liuqin || '',
+      fush_zhi: l.fush_zhi || '',
     }))
     return {
       mode: 'manual' as const,
@@ -104,7 +112,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
       sizhu: s.sizhuYear
         ? { year: s.sizhuYear, month: s.sizhuMonth, day: s.sizhuDay, hour: s.sizhuHour }
         : null,
-      question,
+      question: `${question}${s.beizhu ? `\n\n备注：${s.beizhu}` : ''}`,
     }
   },
 }))

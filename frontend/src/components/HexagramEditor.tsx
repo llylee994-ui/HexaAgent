@@ -11,8 +11,10 @@ export default function HexagramEditor() {
   const sizhuDay = useChatStore((s) => s.sizhuDay)
   const sizhuHour = useChatStore((s) => s.sizhuHour)
   const kongWang = useChatStore((s) => s.kongWang)
+  const beizhu = useChatStore((s) => s.beizhu)
   const setSizhu = useChatStore((s) => s.setSizhu)
   const setKongWang = useChatStore((s) => s.setKongWang)
+  const setBeizhu = useChatStore((s) => s.setBeizhu)
 
   const handlePreset = (name: string) => {
     if (!name) return
@@ -125,6 +127,15 @@ export default function HexagramEditor() {
             onChange={(e) => setKongWang(e.target.value)}
             placeholder="如 辰,巳（用逗号分隔）"
             className="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1.5 text-gray-300 text-xs"
+          />
+        </div>
+        <div>
+          <label className="text-gray-500 block mb-1">备注</label>
+          <textarea
+            value={beizhu}
+            onChange={(e) => setBeizhu(e.target.value)}
+            placeholder="任何需要补充的信息，如伏神说明、特殊状态等"
+            className="w-full h-16 bg-gray-800 border border-gray-700 rounded px-2 py-1.5 text-gray-300 text-xs resize-none"
           />
         </div>
       </div>

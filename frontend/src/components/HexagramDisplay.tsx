@@ -31,13 +31,14 @@ export default function HexagramDisplay({ data }: Props) {
       </div>
 
       {/* 六爻表：从上爻到初爻 */}
-      <div className="grid grid-cols-[auto_auto_auto_auto_auto] gap-x-2 gap-y-0.5 text-[10px]">
+      <div className="grid grid-cols-[auto_auto_auto_auto_auto_auto] gap-x-2 gap-y-0.5 text-[10px]">
         {/* 表头 */}
         <div className="text-gray-600">爻</div>
         <div className="text-gray-600 text-center">六神</div>
         <div className="text-gray-600 text-center">干支</div>
         <div className="text-gray-600 text-center">六亲</div>
         <div className="text-gray-600 text-center">世应</div>
+        <div className="text-gray-600 text-center">伏神</div>
 
         {[6, 5, 4, 3, 2, 1].map((pos) => {
           const line = data.yao_lines.find((l) => l.position === pos)
@@ -48,6 +49,7 @@ export default function HexagramDisplay({ data }: Props) {
           const changingMark = line.changing ? ' ○' : ''
           const shiYingMark =
             line.shi_ying === 'shi' ? '世' : line.shi_ying === 'ying' ? '应' : ''
+          const hasFush = line.fush_liuqin || line.fush_zhi
 
           return (
             <div key={pos} className="contents">
@@ -62,6 +64,9 @@ export default function HexagramDisplay({ data }: Props) {
               </span>
               <span className={`text-center py-0.5 font-bold ${line.shi_ying === 'shi' ? 'text-amber-400' : line.shi_ying === 'ying' ? 'text-blue-400' : 'text-gray-600'}`}>
                 {shiYingMark}
+              </span>
+              <span className="text-center py-0.5 text-purple-400/70 text-[9px]">
+                {hasFush ? `${line.fush_liuqin} ${line.fush_zhi}` : ''}
               </span>
             </div>
           )
