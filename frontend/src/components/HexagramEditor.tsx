@@ -1,6 +1,16 @@
 import { useChatStore } from '../stores/useChatStore'
-import { HEXAGRAM_NAMES, getHexagramYao, DIZHI_OPTIONS } from '../utils/hexagrams'
+import { HEXAGRAM_NAMES, getHexagramYao } from '../utils/hexagrams'
+import SearchableSelect from './SearchableSelect'
 import YaoLineRow from './YaoLineRow'
+
+/** 根据本卦 lines 生成变卦 lines：动爻翻转阴阳 */
+function deriveChangedLines(lines: import('../types').YaoLine[]) {
+  return lines.map((l) => ({
+    ...l,
+    changing: false,
+    type: l.changing ? (l.type === 'yang' ? 'yin' as const : 'yang' as const) : l.type,
+  }))
+}
 
 export default function HexagramEditor() {
   const lines = useChatStore((s) => s.lines)
@@ -15,6 +25,10 @@ export default function HexagramEditor() {
   const setSizhu = useChatStore((s) => s.setSizhu)
   const setKongWang = useChatStore((s) => s.setKongWang)
   const setBeizhu = useChatStore((s) => s.setBeizhu)
+
+  const hasChanging = lines.some((l) => l.changing)
+  const changedLines = hasChanging ? deriveChangedLines(lines) : []
+  const orderedLines = [...lines].reverse()
 
   const handlePreset = (name: string) => {
     if (!name) return
@@ -33,25 +47,28 @@ export default function HexagramEditor() {
     }
   }
 
-  // 从初爻到上爻: [1,2,3,4,5,6]
-  // 显示从上爻到初爻: [6,5,4,3,2,1]
-  const orderedLines = [...lines].reverse()
-  // 上爻→初爻
+  const handleAutoFillSizhu = async () => {
+    try {
+      const res = await fetch('/api/sizhu')
+      const d = await res.json()
+      setSizhu('year', d.year)
+      setSizhu('month', d.month)
+      setSizhu('day', d.day)
+      setSizhu('hour', d.hour)
+    } catch {
+      // ignore
+    }
+  }
 
   return (
     <div className="space-y-3">
       {/* 卦名快捷选择 */}
       <div className="flex gap-1.5">
-        <select
-          onChange={(e) => handlePreset(e.target.value)}
-          className="flex-1 bg-gray-800 border border-gray-700 rounded px-2 py-1.5 text-xs text-gray-300"
-          defaultValue=""
-        >
-          <option value="" disabled>选择卦名快捷填充...</option>
-          {HEXAGRAM_NAMES.map((name) => (
-            <option key={name} value={name}>{name}</option>
-          ))}
-        </select>
+        <SearchableSelect
+          options={HEXAGRAM_NAMES}
+          placeholder="搜索卦名快捷填充..."
+          onSelect={handlePreset}
+        />
         <button
           onClick={handleRandom}
           className="px-2.5 py-1.5 text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 rounded transition-colors"
@@ -77,8 +94,9 @@ export default function HexagramEditor() {
         <span className="w-12 text-center">世应</span>
       </div>
 
-      {/* 六爻编辑器（上→下 = 上爻→初爻） */}
+      {/* 本卦表 */}
       <div className="bg-gray-900/50 rounded-lg px-2 py-1">
+        <div className="text-[10px] text-amber-500/60 mb-1 px-7">— 本卦 —</div>
         {orderedLines.map((line) => (
           <YaoLineRow
             key={line.position}
@@ -89,10 +107,34 @@ export default function HexagramEditor() {
         ))}
       </div>
 
-      {/* 干支（四柱）+ 空亡 */}
+      {/* 变卦表（有动爻时显示） */}
+      {hasChanging && (
+        <div className="bg-gray-900/50 rounded-lg px-2 py-1 border border-red-500/20">
+          <div className="text-[10px] text-red-400/70 mb-1 px-7">— 变卦（动爻翻转后） —</div>
+          {[...changedLines].reverse().map((line) => (
+            <YaoLineRow
+              key={line.position}
+              line={line}
+              onChange={() => {}}
+              isAutoMode={false}
+              isChanged={true}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* 干支（四柱）+ 自动填充 */}
       <div className="space-y-2 text-xs">
         <div>
-          <label className="text-gray-500 block mb-1">干支（四柱）</label>
+          <div className="flex items-center justify-between mb-1">
+            <label className="text-gray-500">干支（四柱）</label>
+            <button
+              onClick={handleAutoFillSizhu}
+              className="text-[10px] text-amber-500 hover:text-amber-400 transition-colors"
+            >
+              ⏱ 自动填充
+            </button>
+          </div>
           <div className="grid grid-cols-4 gap-1.5">
             <input
               value={sizhuYear}

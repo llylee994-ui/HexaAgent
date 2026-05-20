@@ -6,12 +6,14 @@ interface Props {
   line: YaoLine
   onChange: (field: Partial<YaoLine>) => void
   isAutoMode?: boolean
+  isChanged?: boolean
 }
 
-export default function YaoLineRow({ line, onChange, isAutoMode }: Props) {
+export default function YaoLineRow({ line, onChange, isAutoMode, isChanged }: Props) {
   const [showFush, setShowFush] = useState(false)
   const posLabel = ['', '初', '二', '三', '四', '五', '上'][line.position]
   const hasFush = line.fush_liuqin || line.fush_zhi
+  const readOnly = isAutoMode || isChanged
 
   return (
     <div className="border-b border-gray-800">
@@ -20,7 +22,7 @@ export default function YaoLineRow({ line, onChange, isAutoMode }: Props) {
         <span className="w-7 text-gray-500 text-center">{posLabel}</span>
 
         {/* 六神 */}
-        {!isAutoMode ? (
+        {!readOnly ? (
           <select
             value={line.liushen}
             onChange={(e) => onChange({ liushen: e.target.value })}
@@ -38,7 +40,7 @@ export default function YaoLineRow({ line, onChange, isAutoMode }: Props) {
         )}
 
         {/* 阴阳 */}
-        {!isAutoMode ? (
+        {!readOnly ? (
           <div className="flex rounded overflow-hidden border border-gray-600">
             <button
               className={`px-1.5 py-0.5 text-[10px] ${line.type === 'yang' ? 'bg-amber-600 text-white' : 'bg-gray-800 text-gray-500'}`}
@@ -62,13 +64,13 @@ export default function YaoLineRow({ line, onChange, isAutoMode }: Props) {
             checked={line.changing}
             onChange={(e) => onChange({ changing: e.target.checked })}
             className="accent-red-500 w-3 h-3"
-            disabled={isAutoMode}
+            disabled={readOnly}
           />
           <span className={line.changing ? 'text-red-400' : 'text-gray-600'}>动</span>
         </label>
 
         {/* 六亲 */}
-        {!isAutoMode ? (
+        {!readOnly ? (
           <select
             value={line.liuqin}
             onChange={(e) => onChange({ liuqin: e.target.value })}
@@ -84,7 +86,7 @@ export default function YaoLineRow({ line, onChange, isAutoMode }: Props) {
         )}
 
         {/* 地支 */}
-        {!isAutoMode ? (
+        {!readOnly ? (
           <select
             value={line.zhi}
             onChange={(e) => onChange({ zhi: e.target.value })}
@@ -102,7 +104,7 @@ export default function YaoLineRow({ line, onChange, isAutoMode }: Props) {
         )}
 
         {/* 世应 */}
-        {!isAutoMode ? (
+        {!readOnly ? (
           <select
             value={line.shi_ying || ''}
             onChange={(e) => onChange({ shi_ying: (e.target.value || null) as 'shi' | 'ying' | null })}
@@ -119,7 +121,7 @@ export default function YaoLineRow({ line, onChange, isAutoMode }: Props) {
         )}
 
         {/* 伏神展开按钮 */}
-        {!isAutoMode && (
+        {!readOnly && (
           <button
             onClick={() => setShowFush(!showFush)}
             className={`ml-auto text-[10px] px-1 rounded ${hasFush ? 'text-purple-400 bg-purple-500/10' : 'text-gray-600 hover:text-gray-400'}`}
@@ -131,7 +133,7 @@ export default function YaoLineRow({ line, onChange, isAutoMode }: Props) {
       </div>
 
       {/* 伏神编辑区 */}
-      {showFush && !isAutoMode && (
+      {showFush && !readOnly && (
         <div className="flex items-center gap-1.5 px-16 py-1 bg-purple-500/5 text-[10px]">
           <span className="text-purple-400">伏神</span>
           <select

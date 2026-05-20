@@ -25,6 +25,14 @@ def health():
     return {"status": "ok"}
 
 
+@app.get("/api/sizhu")
+def api_sizhu():
+    """返回当前时间的四柱，供前端自动填充"""
+    from datetime import datetime
+    from app.core.sizhu import calc_sizhu
+    return calc_sizhu(datetime.now())
+
+
 @app.post("/api/paipan")
 def api_paipan(request: ChatRequest):
     """排盘接口：返回卦象数据，不经过 Agent"""
