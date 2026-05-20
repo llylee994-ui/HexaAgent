@@ -116,7 +116,7 @@ export default function HexagramEditor() {
           </div>
         </div>
         <div>
-          <label className="text-gray-500 block mb-1">空亡</label>
+          <label className="text-gray-500 block mb-1">空亡（日柱）</label>
           <input
             value={kongWang}
             onChange={(e) => setKongWang(e.target.value)}

@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import type { ChatMessage, YaoLine, HexagramData } from '../types'
-import { getLiushenByDayGan } from '../utils/hexagrams'
+import { getLiushenByDayGan, getKongWang } from '../utils/hexagrams'
 
 const emptyYaoLine = (pos: number): YaoLine => ({
   position: pos,
@@ -112,17 +112,25 @@ export const useChatStore = create<ChatState>((set, get) => ({
         day: field === 'day' ? value : s.sizhuDay,
         hour: field === 'hour' ? value : s.sizhuHour,
       }
-      // 更新日柱时自动分配六神（日干→初爻至上爻的六神序列）
+      // 更新日柱时自动分配六神 + 计算空亡 + 标记旬空爻
       let newLines = s.lines
       let newChanged = s.changedLines
+      let newKongWang = s.kongWang
       if (field === 'day' && value.length >= 2) {
         const dayGan = value[0]
+        const dayZhi = value[1]
+        // 六神分配
         const spirits = getLiushenByDayGan(dayGan)
         newLines = s.lines.map((l) => ({ ...l, liushen: spirits[l.position - 1] }))
-        // 变卦六神继承本卦
         newChanged = s.changedLines.map((l) => ({ ...l, liushen: spirits[l.position - 1] }))
+        // 空亡计算
+        const kong = getKongWang(dayGan, dayZhi)
+        newKongWang = kong.join('、')
+        // 标记旬空爻（本卦+变卦中地支等于空亡地支的爻）
+        newLines = newLines.map((l) => ({ ...l, xun_kong: kong.includes(l.zhi) }))
+        newChanged = newChanged.map((l) => ({ ...l, xun_kong: kong.includes(l.zhi) }))
       }
-      return { lines: newLines, changedLines: newChanged, sizhuYear: newSizhu.year, sizhuMonth: newSizhu.month, sizhuDay: newSizhu.day, sizhuHour: newSizhu.hour }
+      return { lines: newLines, changedLines: newChanged, kongWang: newKongWang, sizhuYear: newSizhu.year, sizhuMonth: newSizhu.month, sizhuDay: newSizhu.day, sizhuHour: newSizhu.hour }
     }),
 
   setKongWang: (v) => set({ kongWang: v }),
