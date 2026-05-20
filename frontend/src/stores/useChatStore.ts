@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import type { ChatMessage, YaoLine, HexagramData } from '../types'
-import { getLiushenByDayGan, getKongWang, findTrigramByLines, getHexagramName, getHexagramNazhi } from '../utils/hexagrams'
+import { getLiushenByDayGan, getKongWang, findTrigramByLines, getHexagramName, getHexagramNazhi, getHexagramPalaceWuxing, getLiuqin, getZhiWuxing } from '../utils/hexagrams'
 
 const emptyYaoLine = (pos: number): YaoLine => ({
   position: pos,
@@ -70,6 +70,8 @@ interface ChatState {
   mode: 'auto' | 'manual' | 'text'
   lines: YaoLine[]
   changedLines: YaoLine[]
+  benGuaName: string
+  benGuaPalaceWuxing: string
   sizhuYear: string
   sizhuMonth: string
   sizhuDay: string
@@ -83,6 +85,7 @@ interface ChatState {
   setMode: (mode: 'auto' | 'manual' | 'text') => void
   updateYaoLine: (pos: number, field: Partial<YaoLine>) => void
   updateChangedLine: (pos: number, field: Partial<YaoLine>) => void
+  setBenGua: (name: string) => void
   setSizhu: (field: 'year' | 'month' | 'day' | 'hour', value: string) => void
   setKongWang: (v: string) => void
   setBeizhu: (v: string) => void
@@ -99,6 +102,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
   mode: 'auto',
   lines: initialLines,
   changedLines: initialLines.map(() => emptyYaoLine(0)),
+  benGuaName: '',
+  benGuaPalaceWuxing: '',
   sizhuYear: '',
   sizhuMonth: '',
   sizhuDay: '',
@@ -113,17 +118,58 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
   updateYaoLine: (pos, field) =>
     set((s) => {
-      const newLines = s.lines.map((l) => (l.position === pos ? { ...l, ...field } : l))
-      return {
-        lines: newLines,
-        changedLines: syncChangedLines(newLines, s.changedLines),
+      const pw = s.benGuaPalaceWuxing
+      // 如果改了地支且有卦宫五行，自动算六亲; 如果改了卦宫相关，全部重算
+      const newLines = s.lines.map((l) => {
+        if (l.position !== pos) return l
+        const updated = { ...l, ...field }
+        if (updated.zhi && pw) updated.liuqin = getLiuqin(pw, updated.zhi)
+        if (updated.zhi) updated.wuxing = getZhiWuxing(updated.zhi)
+        return updated
+      })
+      const newChanged = syncChangedLines(newLines, s.changedLines)
+      // 变卦六亲始终用本卦卦宫
+      if (pw) {
+        for (const cl of newChanged) {
+          if (cl.zhi) cl.liuqin = getLiuqin(pw, cl.zhi)
+          if (cl.zhi) cl.wuxing = getZhiWuxing(cl.zhi)
+        }
       }
+      return { lines: newLines, changedLines: newChanged }
     }),
 
   updateChangedLine: (pos, field) =>
-    set((s) => ({
-      changedLines: s.changedLines.map((l) => (l.position === pos ? { ...l, ...field } : l)),
-    })),
+    set((s) => {
+      const pw = s.benGuaPalaceWuxing
+      return {
+        changedLines: s.changedLines.map((l) => {
+          if (l.position !== pos) return l
+          const updated = { ...l, ...field }
+          if (updated.zhi && pw) updated.liuqin = getLiuqin(pw, updated.zhi)
+          if (updated.zhi) updated.wuxing = getZhiWuxing(updated.zhi)
+          return updated
+        }),
+      }
+    }),
+
+  setBenGua: (name) =>
+    set((s) => {
+      const pw = getHexagramPalaceWuxing(name)
+      if (!pw) return {}
+      // 重算本卦所有爻的六亲
+      const newLines = s.lines.map((l) => ({
+        ...l,
+        liuqin: l.zhi ? getLiuqin(pw, l.zhi) : l.liuqin,
+        wuxing: l.zhi ? getZhiWuxing(l.zhi) : l.wuxing,
+      }))
+      // 重算变卦所有爻的六亲（用本卦卦宫）
+      const newChanged = s.changedLines.map((l) => ({
+        ...l,
+        liuqin: l.zhi ? getLiuqin(pw, l.zhi) : l.liuqin,
+        wuxing: l.zhi ? getZhiWuxing(l.zhi) : l.wuxing,
+      }))
+      return { benGuaName: name, benGuaPalaceWuxing: pw, lines: newLines, changedLines: newChanged }
+    }),
 
   setSizhu: (field, value) =>
     set((s) => {
@@ -162,6 +208,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
     set({
       lines: [1, 2, 3, 4, 5, 6].map(emptyYaoLine),
       changedLines: [1, 2, 3, 4, 5, 6].map(() => emptyYaoLine(0)),
+      benGuaName: '',
+      benGuaPalaceWuxing: '',
     }),
 
   addMessage: (msg) =>
@@ -203,7 +251,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
     return {
       mode: 'manual' as const,
-      hexagram_name: '',
+      hexagram_name: s.benGuaName || '',
       changed_to: null,
       yao_lines: yaoLines,
       changed_lines: changedLines,

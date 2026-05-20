@@ -1,13 +1,15 @@
 import { useChatStore } from '../stores/useChatStore'
-import { HEXAGRAM_NAMES, getHexagramYao, getTrigramPair, getHexagramNazhi } from '../utils/hexagrams'
+import { HEXAGRAM_NAMES, getHexagramYao, getHexagramNazhi, findTrigramByLines, getHexagramName } from '../utils/hexagrams'
 import SearchableSelect from './SearchableSelect'
 import YaoLineRow from './YaoLineRow'
 
 export default function HexagramEditor() {
   const lines = useChatStore((s) => s.lines)
   const changedLines = useChatStore((s) => s.changedLines)
+  const benGuaName = useChatStore((s) => s.benGuaName)
   const updateYaoLine = useChatStore((s) => s.updateYaoLine)
   const updateChangedLine = useChatStore((s) => s.updateChangedLine)
+  const setBenGua = useChatStore((s) => s.setBenGua)
   const resetLines = useChatStore((s) => s.resetLines)
   const sizhuYear = useChatStore((s) => s.sizhuYear)
   const sizhuMonth = useChatStore((s) => s.sizhuMonth)
@@ -23,15 +25,24 @@ export default function HexagramEditor() {
   const orderedLines = [...lines].reverse()
   const orderedChanged = [...changedLines].reverse()
 
+  // 变卦名推导
+  const changedLower = findTrigramByLines(changedLines.slice(0, 3).map((l) => l.type))
+  const changedUpper = findTrigramByLines(changedLines.slice(3, 6).map((l) => l.type))
+  const changedGuaName =
+    changedLower && changedUpper ? getHexagramName(changedUpper, changedLower) : null
+
   const handlePreset = (name: string) => {
     if (!name) return
     const yao = getHexagramYao(name)
     if (yao.length === 0) return
     const nazhi = getHexagramNazhi(name)
+    // 先填阴阳和纳支（六亲将在 setBenGua 中自动计算）
     yao.forEach((type, i) => {
       const [gan, zhi] = nazhi[i] || ['', '']
-      updateYaoLine(i + 1, { type, changing: false, gan, zhi, liuqin: '', shi_ying: null })
+      updateYaoLine(i + 1, { type, changing: false, gan, zhi, shi_ying: null })
     })
+    // 设置卦宫五行 → 自动计算所有爻的六亲
+    setBenGua(name)
   }
 
   const handleRandom = () => {
@@ -142,7 +153,9 @@ export default function HexagramEditor() {
 
       {/* 本卦表 */}
       <div className="bg-gray-900/50 rounded-lg px-2 py-1">
-        <div className="text-[10px] text-amber-500/60 mb-1 px-7">— 本卦 —</div>
+        <div className="text-[10px] text-amber-500/60 mb-1 px-7">
+          — 本卦{benGuaName ? `：${benGuaName}` : ''} —
+        </div>
         {orderedLines.map((line) => (
           <YaoLineRow
             key={line.position}
@@ -155,7 +168,9 @@ export default function HexagramEditor() {
       {/* 变卦表 */}
       {hasChanging && (
         <div className="bg-gray-900/50 rounded-lg px-2 py-1 border border-red-500/20">
-          <div className="text-[10px] text-red-400/70 mb-1 px-7">— 变卦（六神继承本卦，六亲/地支请手动填写） —</div>
+          <div className="text-[10px] text-red-400/70 mb-1 px-7">
+            — 变卦{changedGuaName ? `：${changedGuaName}` : ''}（六神继承，六亲基于本卦卦宫） —
+          </div>
           {orderedChanged.map((line) => (
             <YaoLineRow
               key={line.position}

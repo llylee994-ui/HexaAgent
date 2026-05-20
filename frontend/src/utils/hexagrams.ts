@@ -108,6 +108,53 @@ export const DIZHI_OPTIONS = ['子','丑','寅','卯','辰','巳','午','未','�
 export const LIUQIN_OPTIONS = ['父母','兄弟','妻财','官鬼','子孙']
 export const LIUSHEN = ['青龙','朱雀','勾陈','腾蛇','白虎','玄武']
 
+// ── 卦宫五行（hexagram → palace wuxing）─────
+const HEXAGRAM_PALACE_WUXING: Record<string, string> = {}
+const palaceGroups: Record<string, string[]> = {
+  '金': ['乾为天','天风姤','天山遁','天地否','风地观','山地剥','火地晋','火天大有',
+         '兑为泽','泽水困','泽地萃','泽山咸','水山蹇','地山谦','雷山小过','雷泽归妹'],
+  '水': ['坎为水','水泽节','水雷屯','水火既济','泽火革','雷火丰','地火明夷','地水师'],
+  '木': ['震为雷','雷地豫','雷水解','雷风恒','地风升','水风井','泽风大过','泽雷随',
+         '巽为风','风天小畜','风火家人','风雷益','天雷无妄','火雷噬嗑','山雷颐','山风蛊'],
+  '火': ['离为火','火山旅','火风鼎','火水未济','山水蒙','风水涣','天水讼','天火同人'],
+  '土': ['艮为山','山火贲','山天大畜','山泽损','火泽睽','天泽履','风泽中孚','风山渐',
+         '坤为地','地雷复','地泽临','地天泰','雷天大壮','泽天夬','水天需','水地比'],
+}
+for (const [wx, names] of Object.entries(palaceGroups)) {
+  for (const name of names) HEXAGRAM_PALACE_WUXING[name] = wx
+}
+
+export function getHexagramPalaceWuxing(name: string): string {
+  return HEXAGRAM_PALACE_WUXING[name] || ''
+}
+
+// ── 地支→五行 ────────────────────────────────
+const ZHI_WUXING_MAP: Record<string, string> = {
+  '子':'水','丑':'土','寅':'木','卯':'木','辰':'土',
+  '巳':'火','午':'火','未':'土','申':'金','酉':'金','戌':'土','亥':'水',
+}
+
+export function getZhiWuxing(zhi: string): string {
+  return ZHI_WUXING_MAP[zhi] || ''
+}
+
+// ── 六亲计算（环形五行生克法）────────────────
+const WX_ORDER = ['木','火','土','金','水']
+
+export function getLiuqin(palaceWuxing: string, zhi: string): string {
+  const zw = ZHI_WUXING_MAP[zhi]
+  if (!zw || !palaceWuxing) return ''
+  if (palaceWuxing === zw) return '兄弟'
+  const idxMe = WX_ORDER.indexOf(palaceWuxing)
+  const idxHe = WX_ORDER.indexOf(zw)
+  const diff = (idxHe - idxMe + 5) % 5
+  if (diff === 1) return '子孙'
+  if (diff === 4) return '父母'
+  if (diff === 2) return '妻财'
+  if (diff === 3) return '官鬼'
+  return '兄弟'
+}
+
 // ── 日干→六神起始索引 ──────────────────────
 const LIUSHEN_START: Record<string, number> = {
   '甲':0,'乙':0, '丙':1,'丁':1, '戊':2, '己':3, '庚':4,'辛':4, '壬':5,'癸':5,
