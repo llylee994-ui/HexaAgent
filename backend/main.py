@@ -91,9 +91,20 @@ async def api_chat(request: ChatRequest):
         now_str = f"当前时间是 {__import__('datetime').datetime.now().strftime('%Y年%m月%d日 %H:%M')}"
         user_message = f"{now_str}。用户问题：{request.message}"
 
+    # 加载历史消息（多轮对话上下文）
+    session = get_or_create_session(request.session_id)
+    history = session.get("messages", [])
+    # 只加载最近 10 条消息，避免 token 溢出
+    recent = history[-10:] if len(history) > 10 else history
+    agent_messages = []
+    for h in recent:
+        role = "user" if h["role"] == "user" else "assistant"
+        agent_messages.append((role, h["content"]))
+    agent_messages.append(("user", user_message))
+
     try:
         result = await agent.ainvoke(
-            {"messages": [("user", user_message)]},
+            {"messages": agent_messages},
             config={"configurable": {"thread_id": request.session_id}},
         )
     except Exception as e:

@@ -22,6 +22,7 @@ export default function Layout() {
   const [showHistory, setShowHistory] = useState(false)
   const [showThinking, setShowThinking] = useState(false)
   const [inputText, setInputText] = useState('')
+  const [refreshKey, setRefreshKey] = useState(0)
 
   useEffect(() => {
     localStorage.setItem('hexa_session', sessionId)
@@ -64,6 +65,7 @@ export default function Layout() {
         timestamp: Date.now(),
       })
       setThinkingChain(response.thinking_chain)
+      setRefreshKey((k) => k + 1)
     } catch (err) {
       addMessage({
         id: (Date.now() + 1).toString(),
@@ -89,9 +91,26 @@ export default function Layout() {
     setShowHistory(false)
   }
 
-  const handleSelectSession = (id: string) => {
+  const handleSelectSession = async (id: string) => {
     setSessionId(id)
     setShowHistory(false)
+    useChatStore.getState().setLoading(true)
+    try {
+      const res = await fetch(`/api/sessions/${id}`)
+      const s = await res.json()
+      if (s.messages) {
+        useChatStore.setState({ messages: [] })
+        for (const m of s.messages as Array<{role: string; content: string}>) {
+          useChatStore.getState().addMessage({
+            id: Math.random().toString(36).slice(2),
+            role: m.role as 'user' | 'assistant',
+            content: m.content,
+            timestamp: Date.now(),
+          })
+        }
+      }
+    } catch { /* ignore */ }
+    useChatStore.getState().setLoading(false)
   }
 
   const handleDeleteSession = (id: string) => {
@@ -137,13 +156,14 @@ export default function Layout() {
         {showHistory && (
           <>
             <div className="fixed inset-0 z-20 md:hidden" onClick={() => setShowHistory(false)} />
-            <aside className="fixed md:relative left-0 top-0 bottom-0 z-30 w-64 md:w-56 border-r border-gray-800 bg-[#0f0f1a] flex-shrink-0 md:flex hidden">
+            <aside className="fixed left-0 top-0 bottom-0 z-30 w-64 md:hidden border-r border-gray-800 bg-[#0f0f1a] flex-shrink-0 flex">
               <HistoryPanel
                 currentId={sessionId}
                 onSelect={handleSelectSession}
                 onNew={handleNewSession}
                 onDelete={handleDeleteSession}
                 onClose={() => setShowHistory(false)}
+                refreshKey={refreshKey}
               />
             </aside>
           </>
@@ -155,6 +175,7 @@ export default function Layout() {
             onSelect={handleSelectSession}
             onNew={handleNewSession}
             onDelete={handleDeleteSession}
+            refreshKey={refreshKey}
           />
         </aside>
 

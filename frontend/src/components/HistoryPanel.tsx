@@ -13,9 +13,10 @@ interface Props {
   onNew: () => void
   onDelete: (id: string) => void
   onClose?: () => void
+  refreshKey?: number
 }
 
-export default function HistoryPanel({ currentId, onSelect, onNew, onDelete, onClose }: Props) {
+export default function HistoryPanel({ currentId, onSelect, onNew, onDelete, onClose, refreshKey }: Props) {
   const [sessions, setSessions] = useState<Session[]>([])
 
   const loadSessions = async () => {
@@ -25,7 +26,7 @@ export default function HistoryPanel({ currentId, onSelect, onNew, onDelete, onC
     } catch { /* ignore */ }
   }
 
-  useEffect(() => { loadSessions() }, [currentId])
+  useEffect(() => { loadSessions() }, [currentId, refreshKey])
 
   const handleDelete = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation()
