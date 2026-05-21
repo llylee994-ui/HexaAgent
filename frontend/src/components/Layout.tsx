@@ -19,7 +19,7 @@ export default function Layout() {
   const textInput = useChatStore((s) => s.textInput)
 
   const [sessionId, setSessionId] = useState(() => localStorage.getItem('hexa_session') || 'default')
-  const [showHistory, setShowHistory] = useState(false)
+  const [showHistory, setShowHistory] = useState(true)
   const [showThinking, setShowThinking] = useState(false)
   const [inputText, setInputText] = useState('')
   const [refreshKey, setRefreshKey] = useState(0)
@@ -152,11 +152,11 @@ export default function Layout() {
       </header>
 
       <div className="flex-1 flex overflow-hidden relative">
-        {/* 历史面板 (overlay on mobile) */}
+        {/* 历史面板：桌面侧栏 / 移动浮层，统一由 ☰ 控制 */}
         {showHistory && (
           <>
-            <div className="fixed inset-0 z-20 md:hidden" onClick={() => setShowHistory(false)} />
-            <aside className="fixed left-0 top-0 bottom-0 z-30 w-64 md:hidden border-r border-gray-800 bg-[#0f0f1a] flex-shrink-0 flex">
+            <div className="fixed inset-0 z-20 md:hidden bg-black/50" onClick={() => setShowHistory(false)} />
+            <aside className="fixed md:relative left-0 top-0 bottom-0 z-30 w-64 md:w-56 border-r border-gray-800 bg-[#0f0f1a] flex-shrink-0 flex flex-col">
               <HistoryPanel
                 currentId={sessionId}
                 onSelect={handleSelectSession}
@@ -168,16 +168,6 @@ export default function Layout() {
             </aside>
           </>
         )}
-        {/* Desktop: always visible */}
-        <aside className="hidden md:flex w-56 border-r border-gray-800 bg-[#0f0f1a] flex-shrink-0 flex-col">
-          <HistoryPanel
-            currentId={sessionId}
-            onSelect={handleSelectSession}
-            onNew={handleNewSession}
-            onDelete={handleDeleteSession}
-            refreshKey={refreshKey}
-          />
-        </aside>
 
         {/* 左侧输入面板 (hidden on mobile unless toggled) */}
         <aside className={`${showInput ? 'flex' : 'hidden'} md:flex w-full md:w-[25rem] border-r border-gray-800 flex-shrink-0 flex-col`}>
