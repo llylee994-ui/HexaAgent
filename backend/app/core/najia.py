@@ -1,55 +1,44 @@
-"""纳甲规则：为卦象六爻分配天干地支"""
-
-# 各宫六爻地支（自初爻至上爻）
-PALACE_DIZHI = {
-    "乾": ["子", "寅", "辰", "午", "申", "戌"],
-    "坎": ["寅", "辰", "午", "申", "戌", "子"],
-    "艮": ["辰", "午", "申", "戌", "子", "寅"],
-    "震": ["子", "寅", "辰", "午", "申", "戌"],
-    "巽": ["丑", "亥", "酉", "未", "巳", "卯"],
-    "离": ["卯", "丑", "亥", "酉", "未", "巳"],
-    "坤": ["未", "巳", "卯", "丑", "亥", "酉"],
-    "兑": ["巳", "卯", "丑", "亥", "酉", "未"],
-}
-
-# 各宫各爻天干
-# 乾宫: 内卦(初-三)纳甲, 外卦(四-上)纳壬
-# 坤宫: 内卦(初-三)纳乙, 外卦(四-上)纳癸
-# 其余六宫: 内外同干
-PALACE_TIANGAN = {
-    "乾": ["甲", "甲", "甲", "壬", "壬", "壬"],
-    "坎": ["戊", "戊", "戊", "戊", "戊", "戊"],
-    "艮": ["丙", "丙", "丙", "丙", "丙", "丙"],
-    "震": ["庚", "庚", "庚", "庚", "庚", "庚"],
-    "巽": ["辛", "辛", "辛", "辛", "辛", "辛"],
-    "离": ["己", "己", "己", "己", "己", "己"],
-    "坤": ["乙", "乙", "乙", "癸", "癸", "癸"],
-    "兑": ["丁", "丁", "丁", "丁", "丁", "丁"],
-}
+"""纳甲规则：按三画卦为六爻分配天干地支"""
 
 from .ganzhi import get_zhi_wuxing
 
+# 三画卦纳支表：inner=下卦(初/二/三爻), outer=上卦(四/五/上爻)
+TRIGRAM_NAZHI = {
+    "乾": {"inner": [("甲","子"), ("甲","寅"), ("甲","辰")],
+            "outer": [("壬","午"), ("壬","申"), ("壬","戌")]},
+    "坎": {"inner": [("戊","寅"), ("戊","辰"), ("戊","午")],
+            "outer": [("戊","申"), ("戊","戌"), ("戊","子")]},
+    "艮": {"inner": [("丙","辰"), ("丙","午"), ("丙","申")],
+            "outer": [("丙","戌"), ("丙","子"), ("丙","寅")]},
+    "震": {"inner": [("庚","子"), ("庚","寅"), ("庚","辰")],
+            "outer": [("庚","午"), ("庚","申"), ("庚","戌")]},
+    "巽": {"inner": [("辛","丑"), ("辛","亥"), ("辛","酉")],
+            "outer": [("辛","未"), ("辛","巳"), ("辛","卯")]},
+    "离": {"inner": [("己","卯"), ("己","丑"), ("己","亥")],
+            "outer": [("己","酉"), ("己","未"), ("己","巳")]},
+    "坤": {"inner": [("乙","未"), ("乙","巳"), ("乙","卯")],
+            "outer": [("癸","丑"), ("癸","亥"), ("癸","酉")]},
+    "兑": {"inner": [("丁","巳"), ("丁","卯"), ("丁","丑")],
+            "outer": [("丁","亥"), ("丁","酉"), ("丁","未")]},
+}
 
-def najia_for_yao(palace: str, position: int) -> tuple[str, str, str]:
-    """给定八宫和爻位(1-6)，返回 (天干, 地支, 五行)"""
-    idx = position - 1
-    gan = PALACE_TIANGAN[palace][idx]
-    zhi = PALACE_DIZHI[palace][idx]
-    wx = get_zhi_wuxing(zhi)
-    return gan, zhi, wx
 
+def apply_najia(yao_lines: list[dict], upper_trigram: str, lower_trigram: str) -> list[dict]:
+    """给六爻列表添加纳甲信息
 
-def apply_najia(yao_lines: list[dict], palace: str) -> list[dict]:
-    """给六爻列表添加纳甲信息（天干、地支、五行）
+    下卦(初-三爻) 用 lower_trigram 的 inner 纳支
+    上卦(四-上爻) 用 upper_trigram 的 outer 纳支
 
     yao_lines: list of {position, type, changing, ...}
-    palace: 八宫名
-    返回原地修改后的列表（同时也会修改原列表）
+    返回原地修改后的列表
     """
-    for line in yao_lines:
-        pos = line["position"]
-        gan, zhi, wx = najia_for_yao(palace, pos)
+    lower_data = TRIGRAM_NAZHI[lower_trigram]
+    upper_data = TRIGRAM_NAZHI[upper_trigram]
+    all_nazhi = lower_data["inner"] + upper_data["outer"]  # 6 elements, index 0=初爻
+
+    for i, line in enumerate(yao_lines):
+        gan, zhi = all_nazhi[i]
         line["gan"] = gan
         line["zhi"] = zhi
-        line["wuxing"] = wx
+        line["wuxing"] = get_zhi_wuxing(zhi)
     return yao_lines
