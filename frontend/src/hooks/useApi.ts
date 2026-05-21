@@ -15,9 +15,10 @@ export async function paipanRequest(message: string): Promise<HexagramData> {
 export async function chatRequest(
   message: string,
   mode: 'auto' | 'manual' = 'auto',
-  hexagramData?: HexagramData
+  hexagramData?: HexagramData,
+  sessionId?: string
 ): Promise<ChatResponse> {
-  const body: Record<string, unknown> = { message, mode }
+  const body: Record<string, unknown> = { message, mode, session_id: sessionId || 'default' }
   if (hexagramData) body.hexagram_data = hexagramData
 
   const res = await fetch(`${BASE}/chat`, {

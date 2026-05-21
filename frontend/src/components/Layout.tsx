@@ -1,3 +1,4 @@
+import { useState, useEffect, useRef } from 'react'
 import { useChatStore } from '../stores/useChatStore'
 import { chatRequest } from '../hooks/useApi'
 import ModeSwitch from './ModeSwitch'
@@ -5,31 +6,43 @@ import HexagramEditor from './HexagramEditor'
 import TextInput from './TextInput'
 import ChatWindow from './ChatWindow'
 import ThinkingChain from './ThinkingChain'
+import HistoryPanel from './HistoryPanel'
 
 export default function Layout() {
   const mode = useChatStore((s) => s.mode)
   const isLoading = useChatStore((s) => s.isLoading)
+  const messages = useChatStore((s) => s.messages)
   const addMessage = useChatStore((s) => s.addMessage)
   const setLoading = useChatStore((s) => s.setLoading)
   const setThinkingChain = useChatStore((s) => s.setThinkingChain)
   const buildHexagramData = useChatStore((s) => s.buildHexagramData)
   const textInput = useChatStore((s) => s.textInput)
 
-  const handleSubmit = async (question: string) => {
-    if (!question.trim() || isLoading) return
+  const [sessionId, setSessionId] = useState(() => localStorage.getItem('hexa_session') || 'default')
+  const [showHistory, setShowHistory] = useState(false)
+  const [showThinking, setShowThinking] = useState(false)
+  const [inputText, setInputText] = useState('')
 
-    const userMsg = {
+  useEffect(() => {
+    localStorage.setItem('hexa_session', sessionId)
+  }, [sessionId])
+
+  const handleSubmit = async () => {
+    const question = inputText.trim()
+    if (!question || isLoading) return
+    setInputText('')
+
+    addMessage({
       id: Date.now().toString(),
-      role: 'user' as const,
+      role: 'user',
       content: question,
       timestamp: Date.now(),
-    }
-    addMessage(userMsg)
+    })
     setLoading(true)
     setThinkingChain([])
 
     try {
-      let hexagramData = undefined
+      let hexagramData: ReturnType<typeof buildHexagramData> | undefined
       let effectiveMessage = question
 
       if (mode === 'manual') {
@@ -39,46 +52,114 @@ export default function Layout() {
         effectiveMessage = `【文本输入模式】用户已提供完整卦象文本，请跳过排盘直接解读：\n\n${textInput}\n\n问题：${question}`
       }
 
-      const response = await chatRequest(effectiveMessage, mode, hexagramData)
-
-      // 自动模式优先用 API 返回的卦象，手动模式用本地构建的
+      const response = await chatRequest(effectiveMessage, mode, hexagramData, sessionId)
       const displayHexagram = response.hexagram || hexagramData || null
 
-      const assistantMsg = {
+      addMessage({
         id: (Date.now() + 1).toString(),
-        role: 'assistant' as const,
+        role: 'assistant',
         content: response.answer,
         hexagram: displayHexagram,
         thinkingChain: response.thinking_chain,
         timestamp: Date.now(),
-      }
-      addMessage(assistantMsg)
+      })
       setThinkingChain(response.thinking_chain)
     } catch (err) {
-      const errorMsg = {
+      addMessage({
         id: (Date.now() + 1).toString(),
-        role: 'assistant' as const,
+        role: 'assistant',
         content: `请求失败: ${err instanceof Error ? err.message : '未知错误'}`,
         timestamp: Date.now(),
-      }
-      addMessage(errorMsg)
+      })
     } finally {
       setLoading(false)
     }
   }
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      handleSubmit()
+    }
+  }
+
+  const handleNewSession = () => {
+    const newId = Math.random().toString(36).slice(2, 14)
+    setSessionId(newId)
+    setShowHistory(false)
+  }
+
+  const handleSelectSession = (id: string) => {
+    setSessionId(id)
+    setShowHistory(false)
+  }
+
+  const handleDeleteSession = (id: string) => {
+    if (id === sessionId) handleNewSession()
+  }
+
+  // ── Mobile: input panel toggle ──
+  const [showInput, setShowInput] = useState(false)
+
   return (
     <div className="h-screen flex flex-col bg-[#0f0f1a]">
       {/* 顶部标题栏 */}
-      <header className="flex items-center justify-between px-4 py-3 border-b border-gray-800">
-        <h1 className="text-lg font-bold text-amber-400">🔮 HexaAgent</h1>
-        <span className="text-xs text-gray-600">六爻解卦智能体</span>
+      <header className="flex items-center justify-between px-3 py-2.5 md:py-3 border-b border-gray-800 flex-shrink-0">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowHistory(!showHistory)}
+            className="text-gray-400 hover:text-amber-400 transition-colors p-1"
+            title="会话记录"
+          >
+            ☰
+          </button>
+          <h1 className="text-base md:text-lg font-bold text-amber-400">🔮 HexaAgent</h1>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowThinking(!showThinking)}
+            className="text-xs text-gray-500 hover:text-amber-400 transition-colors md:hidden"
+          >
+            🧠
+          </button>
+          <button
+            onClick={() => setShowInput(!showInput)}
+            className="text-xs text-gray-500 hover:text-amber-400 transition-colors md:hidden"
+          >
+            ✎
+          </button>
+          <span className="text-[10px] md:text-xs text-gray-600 hidden sm:block">六爻解卦智能体</span>
+        </div>
       </header>
 
-      {/* 主内容区：三栏 */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* 左侧面板 - 输入区 */}
-        <aside className="w-[25rem] border-r border-gray-800 flex flex-col overflow-hidden">
+      <div className="flex-1 flex overflow-hidden relative">
+        {/* 历史面板 (overlay on mobile) */}
+        {showHistory && (
+          <>
+            <div className="fixed inset-0 z-20 md:hidden" onClick={() => setShowHistory(false)} />
+            <aside className="fixed md:relative left-0 top-0 bottom-0 z-30 w-64 md:w-56 border-r border-gray-800 bg-[#0f0f1a] flex-shrink-0 md:flex hidden">
+              <HistoryPanel
+                currentId={sessionId}
+                onSelect={handleSelectSession}
+                onNew={handleNewSession}
+                onDelete={handleDeleteSession}
+                onClose={() => setShowHistory(false)}
+              />
+            </aside>
+          </>
+        )}
+        {/* Desktop: always visible */}
+        <aside className="hidden md:flex w-56 border-r border-gray-800 bg-[#0f0f1a] flex-shrink-0 flex-col">
+          <HistoryPanel
+            currentId={sessionId}
+            onSelect={handleSelectSession}
+            onNew={handleNewSession}
+            onDelete={handleDeleteSession}
+          />
+        </aside>
+
+        {/* 左侧输入面板 (hidden on mobile unless toggled) */}
+        <aside className={`${showInput ? 'flex' : 'hidden'} md:flex w-full md:w-[25rem] border-r border-gray-800 flex-shrink-0 flex-col`}>
           <div className="p-3 border-b border-gray-800">
             <ModeSwitch />
           </div>
@@ -88,59 +169,62 @@ export default function Layout() {
             {mode === 'auto' && (
               <p className="text-gray-500 text-xs text-center mt-8 px-4">
                 输入你的问题和时间，Agent 将自动排盘并解卦。
-                <br /><br />
-                可以直接说："我最近想换工作，能成吗？"
               </p>
             )}
           </div>
-          {/* 底部输入框 */}
-          <QuestionInput onSubmit={handleSubmit} isLoading={isLoading} />
+          {/* 桌面端底部输入 */}
+          <div className="hidden md:block p-3 border-t border-gray-800">
+            <div className="flex gap-1">
+              <input
+                type="text"
+                value={inputText}
+                onChange={(e) => setInputText(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="输入你的问题..."
+                disabled={isLoading}
+                className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-amber-600 disabled:opacity-50"
+              />
+              <button
+                onClick={handleSubmit}
+                disabled={isLoading}
+                className="bg-amber-600 hover:bg-amber-500 disabled:bg-gray-700 text-white rounded-lg px-4 py-2 text-sm font-medium transition-colors"
+              >
+                发送
+              </button>
+            </div>
+          </div>
         </aside>
 
-        {/* 中间面板 - 聊天区 */}
-        <main className="flex-1 flex flex-col overflow-hidden">
+        {/* 中间聊天区 */}
+        <main className="flex-1 flex flex-col overflow-hidden min-w-0">
           <ChatWindow />
+          {/* 移动端底部输入 */}
+          <div className="md:hidden p-2 border-t border-gray-800">
+            <div className="flex gap-1">
+              <input
+                type="text"
+                value={inputText}
+                onChange={(e) => setInputText(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit() } }}
+                placeholder="输入问题..."
+                disabled={isLoading}
+                className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-amber-600 disabled:opacity-50"
+              />
+              <button
+                onClick={handleSubmit}
+                disabled={isLoading}
+                className="bg-amber-600 hover:bg-amber-500 disabled:bg-gray-700 text-white rounded-lg px-4 py-2 text-sm font-medium transition-colors"
+              >
+                发送
+              </button>
+            </div>
+          </div>
         </main>
 
-        {/* 右侧面板 - 思维链 */}
-        <aside className="w-64 border-l border-gray-800 overflow-hidden">
+        {/* 思维链侧栏 (drawer on mobile) */}
+        <aside className={`${showThinking ? 'flex' : 'hidden'} md:flex w-64 border-l border-gray-800 flex-shrink-0 bg-[#0f0f1a] flex-col`}>
           <ThinkingChain />
         </aside>
-      </div>
-    </div>
-  )
-}
-
-function QuestionInput({ onSubmit, isLoading }: { onSubmit: (q: string) => void; isLoading: boolean }) {
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      onSubmit((e.target as HTMLInputElement).value)
-      ;(e.target as HTMLInputElement).value = ''
-    }
-  }
-
-  return (
-    <div className="p-3 border-t border-gray-800">
-      <div className="flex gap-1">
-        <input
-          type="text"
-          placeholder="输入你的问题..."
-          disabled={isLoading}
-          onKeyDown={handleKeyDown}
-          className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-amber-600 disabled:opacity-50"
-        />
-        <button
-          onClick={(e) => {
-            const input = (e.target as HTMLButtonElement).previousElementSibling as HTMLInputElement
-            onSubmit(input.value)
-            input.value = ''
-          }}
-          disabled={isLoading}
-          className="bg-amber-600 hover:bg-amber-500 disabled:bg-gray-700 text-white rounded-lg px-4 py-2 text-sm font-medium transition-colors"
-        >
-          发送
-        </button>
       </div>
     </div>
   )

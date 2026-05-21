@@ -6,6 +6,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.models import ChatRequest, ChatResponse, HexagramData
 from app.agent import create_agent, format_hexagram_text
 from app.core.paipan import paipan
+from app.session_manager import (
+    get_or_create_session, update_session, list_sessions, get_session, delete_session,
+)
 
 agent = create_agent()
 
@@ -23,6 +26,35 @@ app.add_middleware(
 @app.get("/api/health")
 def health():
     return {"status": "ok"}
+
+
+# ── 会话管理 ──────────────────────────────────
+
+@app.get("/api/sessions")
+def api_list_sessions():
+    return list_sessions()
+
+
+@app.get("/api/sessions/{session_id}")
+def api_get_session(session_id: str):
+    s = get_session(session_id)
+    if not s:
+        return {"error": "not found"}, 404
+    return s
+
+
+@app.post("/api/sessions")
+def api_new_session():
+    import uuid
+    sid = uuid.uuid4().hex[:12]
+    get_or_create_session(sid)
+    return {"id": sid}
+
+
+@app.delete("/api/sessions/{session_id}")
+def api_delete_session(session_id: str):
+    delete_session(session_id)
+    return {"status": "deleted"}
 
 
 @app.get("/api/sizhu")
@@ -107,6 +139,13 @@ async def api_chat(request: ChatRequest):
                     if isinstance(block, dict) and block.get("type") == "text":
                         parts.append(block.get("text", ""))
                 answer = "".join(parts)
+
+    # 持久化会话消息
+    session = get_or_create_session(request.session_id)
+    msgs = session.get("messages", [])
+    msgs.append({"role": "user", "content": request.message})
+    msgs.append({"role": "assistant", "content": answer})
+    update_session(request.session_id, request.message[:50], msgs)
 
     return ChatResponse(
         answer=answer or "抱歉，处理出错，请重试。",
