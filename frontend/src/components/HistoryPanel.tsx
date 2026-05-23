@@ -10,7 +10,7 @@ interface Session {
 interface Props {
   currentId: string
   onSelect: (id: string) => void
-  onNew: () => void
+  onNew: (backendId?: string) => void
   onDelete: (id: string) => void
   onClose?: () => void
   refreshKey?: number
@@ -39,7 +39,7 @@ export default function HistoryPanel({ currentId, onSelect, onNew, onDelete, onC
     try {
       const res = await fetch('/api/sessions', { method: 'POST' })
       const { id } = await res.json()
-      onNew()
+      onNew(id)
       loadSessions()
     } catch { /* ignore */ }
   }

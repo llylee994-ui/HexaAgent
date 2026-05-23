@@ -85,9 +85,10 @@ export default function Layout() {
     }
   }
 
-  const handleNewSession = () => {
-    const newId = Math.random().toString(36).slice(2, 14)
+  const handleNewSession = (backendId?: string) => {
+    const newId = backendId || Math.random().toString(36).slice(2, 14)
     setSessionId(newId)
+    useChatStore.getState().setState({ messages: [], thinkingChain: [] })
     setShowHistory(false)
   }
 
