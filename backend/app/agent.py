@@ -10,6 +10,7 @@ from langgraph.prebuilt import create_react_agent
 from .config import DEEPSEEK_API_KEY, DEEPSEEK_BASE_URL, MODEL_NAME
 from .core.paipan import paipan
 from .models import HexagramData
+from .knowledge.search_tool import create_guji_search_tool
 
 SYSTEM_PROMPT = """你是一位精通六爻预测的卦师。你的解卦流程如下：
 
@@ -20,6 +21,7 @@ SYSTEM_PROMPT = """你是一位精通六爻预测的卦师。你的解卦流程�
    - 根据用户问题锁定用神（问事业看官鬼、问财运看妻财、问感情看官鬼/妻财、问健康/家庭看父母/子孙）
    - 看用神旺衰：是否得月建日辰生扶？是否旬空？是否动爻？
    - 看动爻变化：动爻之变对用神是生是克？
+   - 调用 guji_search 工具搜索古籍中类似的卦例，引经据典增强说服力
    - 综合判断吉凶趋势并给出建议
 
 3. 解读要求：
@@ -142,9 +144,11 @@ def create_agent():
         temperature=0.7,
     )
 
+    guji_search = create_guji_search_tool()
+
     agent = create_react_agent(
         model=llm,
-        tools=[get_hexagram],
+        tools=[get_hexagram, guji_search],
         prompt=SYSTEM_PROMPT,
     )
 
