@@ -13,6 +13,7 @@ export default function Layout() {
   const isLoading = useChatStore((s) => s.isLoading)
   const messages = useChatStore((s) => s.messages)
   const addMessage = useChatStore((s) => s.addMessage)
+  const clearMessages = useChatStore((s) => s.clearMessages)
   const setLoading = useChatStore((s) => s.setLoading)
   const setThinkingChain = useChatStore((s) => s.setThinkingChain)
   const buildHexagramData = useChatStore((s) => s.buildHexagramData)
@@ -88,20 +89,21 @@ export default function Layout() {
   const handleNewSession = () => {
     const newId = Math.random().toString(36).slice(2, 14)
     setSessionId(newId)
+    clearMessages()
     setShowHistory(false)
   }
 
   const handleSelectSession = async (id: string) => {
     setSessionId(id)
     setShowHistory(false)
-    useChatStore.getState().setLoading(true)
+    clearMessages()
+    setLoading(true)
     try {
       const res = await fetch(`/api/sessions/${id}`)
       const s = await res.json()
       if (s.messages) {
-        useChatStore.setState({ messages: [] })
         for (const m of s.messages as Array<{role: string; content: string}>) {
-          useChatStore.getState().addMessage({
+          addMessage({
             id: Math.random().toString(36).slice(2),
             role: m.role as 'user' | 'assistant',
             content: m.content,
@@ -110,7 +112,7 @@ export default function Layout() {
         }
       }
     } catch { /* ignore */ }
-    useChatStore.getState().setLoading(false)
+    setLoading(false)
   }
 
   const handleDeleteSession = (id: string) => {
