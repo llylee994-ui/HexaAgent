@@ -92,7 +92,6 @@ interface ChatState {
   setTextInput: (v: string) => void
   resetLines: () => void
   addMessage: (msg: ChatMessage) => void
-  clearMessages: () => void
   setLoading: (v: boolean) => void
   setThinkingChain: (steps: string[]) => void
   buildHexagramData: (question: string) => HexagramData
@@ -246,8 +245,6 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
   addMessage: (msg) =>
     set((s) => ({ messages: [...s.messages, msg] })),
-
-  clearMessages: () => set({ messages: [], thinkingChain: [] }),
 
   setLoading: (v) => set({ isLoading: v }),
   setThinkingChain: (steps) => set({ thinkingChain: steps }),
