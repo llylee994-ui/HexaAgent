@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useChatStore } from '../stores/useChatStore'
 import { chatRequest } from '../hooks/useApi'
 import ModeSwitch from './ModeSwitch'
@@ -12,8 +12,8 @@ import SetupPage from './SetupPage'
 export default function Layout() {
   const mode = useChatStore((s) => s.mode)
   const isLoading = useChatStore((s) => s.isLoading)
-  const messages = useChatStore((s) => s.messages)
   const addMessage = useChatStore((s) => s.addMessage)
+  const clearMessages = useChatStore((s) => s.clearMessages)
   const setLoading = useChatStore((s) => s.setLoading)
   const setThinkingChain = useChatStore((s) => s.setThinkingChain)
   const buildHexagramData = useChatStore((s) => s.buildHexagramData)
@@ -25,233 +25,107 @@ export default function Layout() {
   const [inputText, setInputText] = useState('')
   const [refreshKey, setRefreshKey] = useState(0)
   const [configured, setConfigured] = useState<boolean | null>(null)
+  const [showInput, setShowInput] = useState(false)
 
-  useEffect(() => {
-    localStorage.setItem('hexa_session', sessionId)
-  }, [sessionId])
-
-  // 检查 API 是否已配置
-  useEffect(() => {
-    fetch('/api/config/status').then(r => r.json()).then(d => setConfigured(d.configured)).catch(() => {})
-  }, [])
+  useEffect(() => { localStorage.setItem('hexa_session', sessionId) }, [sessionId])
+  useEffect(() => { fetch('/api/config/status').then(r => r.json()).then(d => setConfigured(d.configured)).catch(() => {}) }, [])
 
   const handleSubmit = async () => {
     const question = inputText.trim()
     if (!question || isLoading) return
     setInputText('')
 
-    addMessage({
-      id: Date.now().toString(),
-      role: 'user',
-      content: question,
-      timestamp: Date.now(),
-    })
+    addMessage({ id: Date.now().toString(), role: 'user', content: question, timestamp: Date.now() })
     setLoading(true)
     setThinkingChain([])
 
     try {
       let hexagramData: ReturnType<typeof buildHexagramData> | undefined
       let effectiveMessage = question
-
-      if (mode === 'manual') {
-        hexagramData = buildHexagramData(question)
-        effectiveMessage = `【手动排盘模式】用户已提供卦象数据，请跳过排盘直接解读。问题：${question}`
-      } else if (mode === 'text') {
-        effectiveMessage = `【文本输入模式】用户已提供完整卦象文本，请跳过排盘直接解读：\n\n${textInput}\n\n问题：${question}`
-      }
+      if (mode === 'manual') { hexagramData = buildHexagramData(question); effectiveMessage = `【手动排盘模式】用户已提供卦象数据，请跳过排盘直接解读。问题：${question}` }
+      else if (mode === 'text') { effectiveMessage = `【文本输入模式】用户已提供完整卦象文本，请跳过排盘直接解读：\n\n${textInput}\n\n问题：${question}` }
 
       const response = await chatRequest(effectiveMessage, mode, hexagramData, sessionId)
-      const displayHexagram = response.hexagram || hexagramData || null
-
-      addMessage({
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: response.answer,
-        hexagram: displayHexagram,
-        thinkingChain: response.thinking_chain,
-        timestamp: Date.now(),
-      })
+      addMessage({ id: (Date.now() + 1).toString(), role: 'assistant', content: response.answer, hexagram: response.hexagram || hexagramData || null, thinkingChain: response.thinking_chain, timestamp: Date.now() })
       setThinkingChain(response.thinking_chain)
       setRefreshKey((k) => k + 1)
     } catch (err) {
-      addMessage({
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: `请求失败: ${err instanceof Error ? err.message : '未知错误'}`,
-        timestamp: Date.now(),
-      })
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      handleSubmit()
-    }
+      addMessage({ id: (Date.now() + 1).toString(), role: 'assistant', content: `请求失败: ${err instanceof Error ? err.message : '未知错误'}`, timestamp: Date.now() })
+    } finally { setLoading(false) }
   }
 
   const handleNewSession = (backendId?: string) => {
-    const newId = backendId || Math.random().toString(36).slice(2, 14)
-    setSessionId(newId)
-    useChatStore.getState().setState({ messages: [], thinkingChain: [] })
+    setSessionId(backendId || Math.random().toString(36).slice(2, 14))
+    clearMessages()
     setShowHistory(false)
   }
 
   const handleSelectSession = async (id: string) => {
-    setSessionId(id)
-    setShowHistory(false)
-    useChatStore.getState().setLoading(true)
+    setSessionId(id); setShowHistory(false); clearMessages(); setLoading(true)
     try {
-      const res = await fetch(`/api/sessions/${id}`)
-      const s = await res.json()
-      if (s.messages) {
-        useChatStore.setState({ messages: [] })
-        for (const m of s.messages as Array<{role: string; content: string}>) {
-          useChatStore.getState().addMessage({
-            id: Math.random().toString(36).slice(2),
-            role: m.role as 'user' | 'assistant',
-            content: m.content,
-            timestamp: Date.now(),
-          })
-        }
-      }
-    } catch { /* ignore */ }
-    useChatStore.getState().setLoading(false)
+      const res = await fetch(`/api/sessions/${id}`); const s = await res.json()
+      if (s.messages) for (const m of s.messages as Array<{role: string; content: string}>) addMessage({ id: Math.random().toString(36).slice(2), role: m.role as 'user' | 'assistant', content: m.content, timestamp: Date.now() })
+    } catch {}
+    setLoading(false)
   }
 
-  const handleDeleteSession = (id: string) => {
-    if (id === sessionId) handleNewSession()
-  }
-
-  // ── Mobile: input panel toggle ──
-  const [showInput, setShowInput] = useState(false)
-
-  if (configured === false) {
-    return <SetupPage onDone={() => setConfigured(true)} />
-  }
+  if (configured === false) return <SetupPage onDone={() => setConfigured(true)} />
 
   return (
-    <div className="h-screen flex flex-col bg-[#0f0f1a]">
-      {/* 顶部标题栏 */}
-      <header className="flex items-center justify-between px-3 py-2.5 md:py-3 border-b border-gray-800 flex-shrink-0">
+    <div className="h-screen flex flex-col bg-ink">
+      <header className="flex items-center justify-between px-3 py-2.5 border-b border-line flex-shrink-0">
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => setShowHistory(!showHistory)}
-            className="text-gray-400 hover:text-amber-400 transition-colors p-1"
-            title="会话记录"
-          >
-            ☰
-          </button>
-          <h1 className="text-base md:text-lg font-bold text-amber-400">🔮 HexaAgent</h1>
+          <button onClick={() => setShowHistory(!showHistory)} className="text-warmgray hover:text-gold transition-colors p-1">&#9776;</button>
+          <h1 className="text-base md:text-lg font-bold text-gold tracking-wider">HexaAgent</h1>
+          <span className="hidden sm:inline text-[11px] text-warmgray tracking-wide">六爻解卦</span>
         </div>
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => setShowThinking(!showThinking)}
-            className="text-xs text-gray-500 hover:text-amber-400 transition-colors md:hidden"
-          >
-            🧠
-          </button>
-          <button
-            onClick={() => setShowInput(!showInput)}
-            className="text-xs text-gray-500 hover:text-amber-400 transition-colors md:hidden"
-          >
-            ✎
-          </button>
-          <span className="text-[10px] md:text-xs text-gray-600 hidden sm:block">六爻解卦智能体</span>
+          <button onClick={() => setShowThinking(!showThinking)} className="md:hidden text-xs text-warmgray hover:text-gold transition-colors">思维链</button>
+          <button onClick={() => setShowInput(!showInput)} className="md:hidden text-xs text-warmgray hover:text-gold transition-colors">排盘</button>
         </div>
       </header>
 
       <div className="flex-1 flex overflow-hidden relative">
-        {/* 历史面板：桌面侧栏 / 移动浮层，统一由 ☰ 控制 */}
         {showHistory && (
           <>
-            <div className="fixed inset-0 z-20 md:hidden bg-black/50" onClick={() => setShowHistory(false)} />
-            <aside className="fixed md:relative left-0 top-0 bottom-0 z-30 w-64 md:w-56 border-r border-gray-800 bg-[#0f0f1a] flex-shrink-0 flex flex-col">
-              <HistoryPanel
-                currentId={sessionId}
-                onSelect={handleSelectSession}
-                onNew={handleNewSession}
-                onDelete={handleDeleteSession}
-                onClose={() => setShowHistory(false)}
-                refreshKey={refreshKey}
-              />
+            <div className="fixed inset-0 z-20 md:hidden bg-ink/80" onClick={() => setShowHistory(false)} />
+            <aside className="fixed md:relative left-0 top-0 bottom-0 z-30 w-64 md:w-56 border-r border-line bg-ink flex-shrink-0 flex flex-col">
+              <HistoryPanel currentId={sessionId} onSelect={handleSelectSession} onNew={handleNewSession} onDelete={(id) => { if (id === sessionId) handleNewSession() }} onClose={() => setShowHistory(false)} refreshKey={refreshKey} />
             </aside>
           </>
         )}
 
-        {/* 左侧输入面板 (hidden on mobile unless toggled) */}
-        <aside className={`${showInput ? 'flex' : 'hidden'} md:flex w-full md:w-[25rem] border-r border-gray-800 flex-shrink-0 flex-col`}>
-          <div className="p-3 border-b border-gray-800 flex items-center justify-between">
+        <aside className={`${showInput ? 'flex' : 'hidden'} md:flex w-full md:w-[25rem] border-r border-line flex-shrink-0 flex-col`}>
+          <div className="p-3 border-b border-line flex items-center justify-between">
             <ModeSwitch />
-            <button
-              onClick={() => setShowInput(false)}
-              className="md:hidden text-xs text-amber-500 hover:text-amber-400"
-            >
-              ← 返回
-            </button>
+            <button onClick={() => setShowInput(false)} className="md:hidden text-xs text-gold-dim hover:text-gold">返回</button>
           </div>
           <div className="flex-1 overflow-y-auto p-3 space-y-4">
             {mode === 'manual' && <HexagramEditor />}
             {mode === 'text' && <TextInput />}
-            {mode === 'auto' && (
-              <p className="text-gray-500 text-xs text-center mt-8 px-4">
-                输入你的问题和时间，Agent 将自动排盘并解卦。
-              </p>
-            )}
+            {mode === 'auto' && <p className="text-warmgray text-xs text-center mt-8 px-4">输入你的问题与时间，自动排盘解卦</p>}
           </div>
-          {/* 桌面端 + 移动端 输入发送栏 */}
-          <div className="p-3 border-t border-gray-800">
+          <div className="p-3 border-t border-line">
             <div className="flex gap-1">
-              <input
-                type="text"
-                value={inputText}
-                onChange={(e) => setInputText(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="输入你的问题..."
-                disabled={isLoading}
-                className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-amber-600 disabled:opacity-50"
-              />
-              <button
-                onClick={handleSubmit}
-                disabled={isLoading}
-                className="bg-amber-600 hover:bg-amber-500 disabled:bg-gray-700 text-white rounded-lg px-4 py-2 text-sm font-medium transition-colors"
-              >
-                发送
-              </button>
+              <input type="text" value={inputText} onChange={(e) => setInputText(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit() } }} placeholder="输入问题..." disabled={isLoading}
+                className="flex-1 bg-ink border border-line rounded px-3 py-2 text-sm text-cream placeholder-warmgray focus:outline-none focus:border-gold-dim disabled:opacity-50" />
+              <button onClick={handleSubmit} disabled={isLoading} className="bg-gold-dim hover:bg-gold disabled:bg-line text-ink rounded px-4 py-2 text-sm font-medium transition-colors">发送</button>
             </div>
           </div>
         </aside>
 
-        {/* 中间聊天区 */}
         <main className="flex-1 flex flex-col overflow-hidden min-w-0">
           <ChatWindow />
-          {/* 移动端底部输入 */}
-          <div className="md:hidden p-2 border-t border-gray-800">
+          <div className="md:hidden p-2 border-t border-line">
             <div className="flex gap-1">
-              <input
-                type="text"
-                value={inputText}
-                onChange={(e) => setInputText(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit() } }}
-                placeholder="输入问题..."
-                disabled={isLoading}
-                className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-amber-600 disabled:opacity-50"
-              />
-              <button
-                onClick={handleSubmit}
-                disabled={isLoading}
-                className="bg-amber-600 hover:bg-amber-500 disabled:bg-gray-700 text-white rounded-lg px-4 py-2 text-sm font-medium transition-colors"
-              >
-                发送
-              </button>
+              <input type="text" value={inputText} onChange={(e) => setInputText(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit() } }} placeholder="输入问题..." disabled={isLoading}
+                className="flex-1 bg-ink border border-line rounded px-3 py-2 text-sm text-cream placeholder-warmgray focus:outline-none focus:border-gold-dim disabled:opacity-50" />
+              <button onClick={handleSubmit} disabled={isLoading} className="bg-gold-dim hover:bg-gold disabled:bg-line text-ink rounded px-4 py-2 text-sm font-medium transition-colors">发送</button>
             </div>
           </div>
         </main>
 
-        {/* 思维链侧栏 (drawer on mobile) */}
-        <aside className={`${showThinking ? 'flex' : 'hidden'} md:flex w-64 border-l border-gray-800 flex-shrink-0 bg-[#0f0f1a] flex-col`}>
+        <aside className={`${showThinking ? 'flex' : 'hidden'} md:flex w-64 border-l border-line flex-shrink-0 bg-ink flex-col`}>
           <ThinkingChain />
         </aside>
       </div>

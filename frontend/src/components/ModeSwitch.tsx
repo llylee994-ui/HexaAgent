@@ -1,28 +1,16 @@
 import { useChatStore } from '../stores/useChatStore'
 
-const MODES = [
-  { key: 'auto' as const, label: '🎯 自动排盘', desc: '输入时间+问题，自动起卦' },
-  { key: 'manual' as const, label: '🖱️ 手动编辑', desc: '逐爻填写卦象' },
-  { key: 'text' as const, label: '📝 文本输入', desc: '粘贴结构化卦象文本' },
-]
+const MODES = [{ key: 'auto' as const, label: '自动' }, { key: 'manual' as const, label: '手动' }, { key: 'text' as const, label: '文本' }]
 
 export default function ModeSwitch() {
   const mode = useChatStore((s) => s.mode)
   const setMode = useChatStore((s) => s.setMode)
 
   return (
-    <div className="flex gap-1 bg-gray-900 rounded-lg p-1">
+    <div className="flex gap-0.5 bg-ink rounded border border-line p-0.5">
       {MODES.map((m) => (
-        <button
-          key={m.key}
-          onClick={() => setMode(m.key)}
-          className={`flex-1 px-3 py-2 rounded-md text-xs transition-colors text-center ${
-            mode === m.key
-              ? 'bg-amber-600 text-white'
-              : 'text-gray-400 hover:text-gray-200'
-          }`}
-          title={m.desc}
-        >
+        <button key={m.key} onClick={() => setMode(m.key)}
+          className={`flex-1 px-3 py-1 rounded text-xs tracking-wide transition-colors ${mode === m.key ? 'bg-gold-dim text-ink' : 'text-warmgray hover:text-cream'}`}>
           {m.label}
         </button>
       ))}
