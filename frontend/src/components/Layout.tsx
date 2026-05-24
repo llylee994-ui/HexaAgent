@@ -183,8 +183,14 @@ export default function Layout() {
 
         {/* 左侧输入面板 (hidden on mobile unless toggled) */}
         <aside className={`${showInput ? 'flex' : 'hidden'} md:flex w-full md:w-[25rem] border-r border-gray-800 flex-shrink-0 flex-col`}>
-          <div className="p-3 border-b border-gray-800">
+          <div className="p-3 border-b border-gray-800 flex items-center justify-between">
             <ModeSwitch />
+            <button
+              onClick={() => setShowInput(false)}
+              className="md:hidden text-xs text-amber-500 hover:text-amber-400"
+            >
+              ← 返回
+            </button>
           </div>
           <div className="flex-1 overflow-y-auto p-3 space-y-4">
             {mode === 'manual' && <HexagramEditor />}
@@ -195,8 +201,8 @@ export default function Layout() {
               </p>
             )}
           </div>
-          {/* 桌面端底部输入 */}
-          <div className="hidden md:block p-3 border-t border-gray-800">
+          {/* 桌面端 + 移动端 输入发送栏 */}
+          <div className="p-3 border-t border-gray-800">
             <div className="flex gap-1">
               <input
                 type="text"

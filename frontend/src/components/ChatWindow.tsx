@@ -17,8 +17,8 @@ export default function ChatWindow() {
         <div className="flex items-center justify-center h-full text-gray-600 text-sm">
           <div className="text-center">
             <div className="text-4xl mb-3">🔮</div>
-            <p>在左侧输入你的问题</p>
-            <p className="text-xs mt-1">Agent 将自动排盘并为你解卦</p>
+            <p>输入你的问题，开始解卦</p>
+            <p className="text-xs mt-1">使用下方输入框发送问题</p>
           </div>
         </div>
       )}
