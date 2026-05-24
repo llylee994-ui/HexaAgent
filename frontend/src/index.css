@@ -11,6 +11,8 @@
   --color-line: #e0dcd5;
   --color-rust: #c4746e;
   --color-plum: #8b7aa0;
+  --shadow-panel: 2px 0 12px rgba(0,0,0,0.04);
+  --shadow-card: 0 1px 4px rgba(0,0,0,0.04);
 }
 
 body {
@@ -26,6 +28,10 @@ body {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #d5d0c8; border-radius: 2px; }
 ::-webkit-scrollbar-thumb:hover { background: #c0bab0; }
+
+/* 面板阴影过渡 */
+.panel-shadow { box-shadow: var(--shadow-panel); }
+.card-shadow { box-shadow: var(--shadow-card); }
 
 .markdown-body h1 { font-size: 1.15em; font-weight: 700; margin: 0.7em 0 0.3em; color: var(--color-matcha-dim); }
 .markdown-body h2 { font-size: 1.05em; font-weight: 600; margin: 0.6em 0 0.2em; color: var(--color-matcha); }

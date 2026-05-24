@@ -30,7 +30,7 @@ export default function HexagramDisplay({ data }: { data: HexagramData }) {
   )
 
   return (
-    <div className="bg-cream/60 border border-line/50 rounded p-3 text-xs">
+    <div className="bg-cream/60 border border-line/50 rounded-xl p-3 text-xs">
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
           <span className="text-matcha font-bold text-base">{data.hexagram_name}</span>

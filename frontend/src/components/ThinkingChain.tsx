@@ -12,7 +12,7 @@ export default function ThinkingChain() {
         ) : (
           <div className="space-y-2">
             {thinkingChain.map((step, i) => (
-              <div key={i} className="bg-warm border border-line/50 rounded px-3 py-2 text-xs text-soft">
+              <div key={i} className="bg-warm border border-line/50 rounded-lg px-3 py-2 text-xs text-soft">
                 <span className="text-matcha-dim mr-2 text-[10px]">{i + 1}.</span>{step}
               </div>
             ))}

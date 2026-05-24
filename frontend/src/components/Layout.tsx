@@ -89,13 +89,13 @@ export default function Layout() {
         {showHistory && (
           <>
             <div className="fixed inset-0 z-20 md:hidden bg-cream/80" onClick={() => setShowHistory(false)} />
-            <aside className="fixed md:relative left-0 top-0 bottom-0 z-30 w-64 md:w-56 border-r border-line bg-cream flex-shrink-0 flex flex-col">
+            <aside className="fixed md:relative left-0 top-0 bottom-0 z-30 w-64 md:w-56 panel-shadow rounded bg-cream flex-shrink-0 flex flex-col">
               <HistoryPanel currentId={sessionId} onSelect={handleSelectSession} onNew={handleNewSession} onDelete={(id) => { if (id === sessionId) handleNewSession() }} onClose={() => setShowHistory(false)} refreshKey={refreshKey} />
             </aside>
           </>
         )}
 
-        <aside className={`${showInput ? 'flex' : 'hidden'} md:flex w-full md:w-[25rem] border-r border-line flex-shrink-0 flex-col`}>
+        <aside className={`${showInput ? 'flex' : 'hidden'} md:flex w-full md:w-[25rem] panel-shadow rounded flex-shrink-0 flex-col`}>
           <div className="p-3 border-b border-line flex items-center justify-between">
             <ModeSwitch />
             <button onClick={() => setShowInput(false)} className="md:hidden text-xs text-matcha-dim hover:text-matcha">返回</button>
@@ -125,7 +125,7 @@ export default function Layout() {
           </div>
         </main>
 
-        <aside className={`${showThinking ? 'flex' : 'hidden'} md:flex w-64 border-l border-line flex-shrink-0 bg-cream flex-col`}>
+        <aside className={`${showThinking ? 'flex' : 'hidden'} md:flex w-64 panel-shadow rounded flex-shrink-0 bg-cream flex-col`}>
           <ThinkingChain />
         </aside>
       </div>
