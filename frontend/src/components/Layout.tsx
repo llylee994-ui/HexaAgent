@@ -7,6 +7,7 @@ import TextInput from './TextInput'
 import ChatWindow from './ChatWindow'
 import ThinkingChain from './ThinkingChain'
 import HistoryPanel from './HistoryPanel'
+import SetupPage from './SetupPage'
 
 export default function Layout() {
   const mode = useChatStore((s) => s.mode)
@@ -23,10 +24,16 @@ export default function Layout() {
   const [showThinking, setShowThinking] = useState(false)
   const [inputText, setInputText] = useState('')
   const [refreshKey, setRefreshKey] = useState(0)
+  const [configured, setConfigured] = useState<boolean | null>(null)
 
   useEffect(() => {
     localStorage.setItem('hexa_session', sessionId)
   }, [sessionId])
+
+  // 检查 API 是否已配置
+  useEffect(() => {
+    fetch('/api/config/status').then(r => r.json()).then(d => setConfigured(d.configured)).catch(() => {})
+  }, [])
 
   const handleSubmit = async () => {
     const question = inputText.trim()
@@ -120,6 +127,10 @@ export default function Layout() {
 
   // ── Mobile: input panel toggle ──
   const [showInput, setShowInput] = useState(false)
+
+  if (configured === false) {
+    return <SetupPage onDone={() => setConfigured(true)} />
+  }
 
   return (
     <div className="h-screen flex flex-col bg-[#0f0f1a]">

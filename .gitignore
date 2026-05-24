@@ -30,5 +30,9 @@ Thumbs.db
 # ChromaDB
 chroma_db/
 
-# 数据文件
+# 数据文件（用户生成，不纳入版本控制）
 backend/data/*.db
+backend/data/sessions.json
+backend/data/settings.json
+backend/data/user_cases.json
+backend/data/guji_index.json

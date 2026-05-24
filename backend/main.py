@@ -10,6 +10,7 @@ from app.session_manager import (
     get_or_create_session, update_session, list_sessions, get_session, delete_session,
 )
 from app.memory.user_case_store import UserCaseStore
+from app.config import is_configured, save_settings, DEEPSEEK_BASE_URL, MODEL_NAME
 
 agent = create_agent()
 
@@ -27,6 +28,24 @@ app.add_middleware(
 @app.get("/api/health")
 def health():
     return {"status": "ok"}
+
+
+@app.get("/api/config/status")
+def config_status():
+    return {"configured": is_configured()}
+
+
+@app.post("/api/config/setup")
+def config_setup(data: dict):
+    save_settings(
+        api_key=data.get("api_key", ""),
+        base_url=data.get("base_url", DEEPSEEK_BASE_URL),
+        model=data.get("model", MODEL_NAME),
+    )
+    # 需要重启 agent 才能生效
+    global agent
+    agent = create_agent()
+    return {"success": True}
 
 
 # ── 会话管理 ──────────────────────────────────
