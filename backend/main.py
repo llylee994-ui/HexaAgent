@@ -9,6 +9,7 @@ from app.core.paipan import paipan
 from app.session_manager import (
     get_or_create_session, update_session, list_sessions, get_session, delete_session,
 )
+from app.memory.user_case_store import UserCaseStore
 
 agent = create_agent()
 
@@ -158,8 +159,43 @@ async def api_chat(request: ChatRequest):
     msgs.append({"role": "assistant", "content": answer})
     update_session(request.session_id, request.message[:50], msgs)
 
+    # 保存卦例到用户长期记忆
+    if hexagram:
+        try:
+            _save_user_case(request.session_id, request.message, hexagram, answer)
+        except Exception:
+            pass
+
     return ChatResponse(
         answer=answer or "抱歉，处理出错，请重试。",
         hexagram=hexagram,
         thinking_chain=thinking_chain,
+    )
+
+
+def _save_user_case(session_id: str, question: str, hd: HexagramData, answer: str):
+    """将卦例保存到用户长期记忆"""
+    # 提取卦象关键信息
+    changing = [l for l in hd.yao_lines if l.changing]
+    shi_yao = next((l for l in hd.yao_lines if l.shi_ying == "shi"), None)
+    key_info_parts = []
+    if shi_yao:
+        key_info_parts.append(f"世{shi_yao.liuqin}{shi_yao.zhi}")
+    for cl in changing:
+        key_info_parts.append(f"动{cl.position}爻{cl.gan}{cl.zhi}{cl.liuqin}")
+    if hd.xun_kong:
+        key_info_parts.append(f"空{'、'.join(hd.xun_kong)}")
+    key_info = "，".join(key_info_parts)
+
+    # 截取 AI 断语第一句作为摘要
+    first_line = answer.split("\n")[0].strip().lstrip("#").strip()[:100] if answer else ""
+
+    store = UserCaseStore()
+    store.add_case(
+        session_id=session_id,
+        question=question,
+        hexagram_name=hd.hexagram_name,
+        changed_to=hd.changed_to or "",
+        key_yao_info=key_info,
+        answer_summary=first_line,
     )

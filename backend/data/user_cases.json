@@ -1,0 +1,22 @@
+[
+  {
+    "session_id": "test1",
+    "question": "想换工作能成吗",
+    "hexagram_name": "天风姤",
+    "changed_to": "天水讼",
+    "key_yao_info": "世妻财丑土,动初爻父母丑土,动四爻官鬼午火",
+    "answer_summary": "此时跳槽时机不佳",
+    "summary": "问：想换工作能成吗。卦：天风姤 变天水讼。关键：世妻财丑土,动初爻父母丑土,动四爻官鬼午火。断：此时跳槽时机不佳",
+    "timestamp": "2026-05-24T11:27:25.245727"
+  },
+  {
+    "session_id": "test2",
+    "question": "看投资合作能否成功",
+    "hexagram_name": "火天大有",
+    "changed_to": "",
+    "key_yao_info": "世妻财寅木,空亡辰巳",
+    "answer_summary": "合作可成但需谨慎",
+    "summary": "问：看投资合作能否成功。卦：火天大有。关键：世妻财寅木,空亡辰巳。断：合作可成但需谨慎",
+    "timestamp": "2026-05-24T11:27:25.250999"
+  }
+]
