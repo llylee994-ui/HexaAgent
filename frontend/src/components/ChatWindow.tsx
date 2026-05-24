@@ -12,9 +12,9 @@ export default function ChatWindow() {
   return (
     <div className="flex-1 overflow-y-auto p-4">
       {messages.length === 0 && !isLoading && (
-        <div className="flex items-center justify-center h-full text-warmgray text-sm">
+        <div className="flex items-center justify-center h-full text-soft text-sm">
           <div className="text-center space-y-2">
-            <p className="text-lg tracking-widest text-gold-dim">六爻</p>
+            <p className="text-lg tracking-widest text-matcha-dim">六爻</p>
             <p className="text-xs">输入问题，开始解卦</p>
           </div>
         </div>
@@ -24,7 +24,7 @@ export default function ChatWindow() {
 
       {isLoading && (
         <div className="flex justify-start mb-4">
-          <div className="bg-paper border border-line rounded px-4 py-3 text-sm text-warmgray">推演中&hellip;</div>
+          <div className="bg-warm border border-line rounded px-4 py-3 text-sm text-soft">推演中&hellip;</div>
         </div>
       )}
       <div ref={bottomRef} />

@@ -1,22 +1,22 @@
 @import "tailwindcss";
 
 @theme {
-  --color-ink: #14141e;
-  --color-paper: #1a1b26;
-  --color-gold: #c9a86c;
-  --color-gold-dim: #8b7355;
-  --color-cream: #e8e4db;
-  --color-warmgray: #9b9689;
-  --color-line: #2a2a35;
+  --color-cream: #faf7f2;
+  --color-warm: #f0ece3;
+  --color-matcha: #7a9a6e;
+  --color-matcha-dim: #5c7a52;
+  --color-matcha-bg: #f3f7f0;
+  --color-ink: #3a3835;
+  --color-soft: #8c8880;
+  --color-line: #e0dcd5;
   --color-rust: #c4746e;
-  --color-sage: #8da090;
-  --color-plum: #a89ec4;
+  --color-plum: #8b7aa0;
 }
 
 body {
   margin: 0;
-  background: var(--color-ink);
-  color: var(--color-cream);
+  background: var(--color-cream);
+  color: var(--color-ink);
   font-family: "Noto Serif SC", "Source Han Serif SC", "SimSun", serif;
   font-size: 15px;
   letter-spacing: 0.02em;
@@ -24,23 +24,23 @@ body {
 
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #2a2a35; border-radius: 2px; }
-::-webkit-scrollbar-thumb:hover { background: #3a3a45; }
+::-webkit-scrollbar-thumb { background: #d5d0c8; border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: #c0bab0; }
 
-.markdown-body h1 { font-size: 1.15em; font-weight: 700; margin: 0.7em 0 0.3em; color: var(--color-gold); }
-.markdown-body h2 { font-size: 1.05em; font-weight: 600; margin: 0.6em 0 0.2em; color: var(--color-gold-dim); }
-.markdown-body h3 { font-size: 0.95em; font-weight: 600; margin: 0.5em 0 0.2em; color: #b8a88a; }
-.markdown-body h4 { font-size: 0.9em; font-weight: 500; margin: 0.4em 0 0.15em; color: #a89878; }
+.markdown-body h1 { font-size: 1.15em; font-weight: 700; margin: 0.7em 0 0.3em; color: var(--color-matcha-dim); }
+.markdown-body h2 { font-size: 1.05em; font-weight: 600; margin: 0.6em 0 0.2em; color: var(--color-matcha); }
+.markdown-body h3 { font-size: 0.95em; font-weight: 600; margin: 0.5em 0 0.2em; color: #6b8a60; }
+.markdown-body h4 { font-size: 0.9em; font-weight: 500; margin: 0.4em 0 0.15em; color: #7d8e76; }
 .markdown-body p { margin: 0.35em 0; }
 .markdown-body ul, .markdown-body ol { padding-left: 1.4em; margin: 0.25em 0; }
 .markdown-body li { margin: 0.15em 0; }
-.markdown-body strong { color: var(--color-gold); font-weight: 600; }
-.markdown-body code { background: #1e1f2a; padding: 0.1em 0.3em; border-radius: 2px; font-size: 0.9em; color: var(--color-plum); }
-.markdown-body pre { background: #111118; padding: 0.7em; border-radius: 4px; overflow-x: auto; margin: 0.4em 0; border: 1px solid var(--color-line); }
-.markdown-body pre code { background: none; padding: 0; color: var(--color-cream); }
-.markdown-body blockquote { border-left: 2px solid var(--color-gold-dim); padding-left: 0.7em; margin: 0.3em 0; color: var(--color-warmgray); }
+.markdown-body strong { color: var(--color-matcha-dim); font-weight: 600; }
+.markdown-body code { background: var(--color-warm); padding: 0.1em 0.3em; border-radius: 2px; font-size: 0.9em; color: var(--color-plum); }
+.markdown-body pre { background: var(--color-warm); padding: 0.7em; border-radius: 4px; overflow-x: auto; margin: 0.4em 0; border: 1px solid var(--color-line); }
+.markdown-body pre code { background: none; padding: 0; color: var(--color-ink); }
+.markdown-body blockquote { border-left: 2px solid var(--color-matcha); padding-left: 0.7em; margin: 0.3em 0; color: var(--color-soft); }
 .markdown-body hr { border: none; border-top: 1px solid var(--color-line); margin: 0.6em 0; }
 .markdown-body table { border-collapse: collapse; width: 100%; margin: 0.4em 0; font-size: 0.85em; }
 .markdown-body th, .markdown-body td { border: 1px solid var(--color-line); padding: 0.25em 0.5em; text-align: left; }
-.markdown-body th { background: var(--color-paper); color: var(--color-gold-dim); }
-.markdown-body a { color: var(--color-gold); }
+.markdown-body th { background: var(--color-matcha-bg); color: var(--color-matcha-dim); }
+.markdown-body a { color: var(--color-matcha); }

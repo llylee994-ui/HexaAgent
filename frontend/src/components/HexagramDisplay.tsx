@@ -5,7 +5,7 @@ export default function HexagramDisplay({ data }: { data: HexagramData }) {
 
   const renderTable = (yaoLines: typeof data.yao_lines, showChanged: boolean) => (
     <div className="grid grid-cols-[auto_auto_auto_auto_auto_auto] gap-x-2 gap-y-0.5 text-[10px]">
-      <div className="text-warmgray">爻</div><div className="text-warmgray text-center">六神</div><div className="text-warmgray text-center">干支</div><div className="text-warmgray text-center">六亲</div><div className="text-warmgray text-center">世应</div><div className="text-warmgray text-center">伏神</div>
+      <div className="text-soft">爻</div><div className="text-soft text-center">六神</div><div className="text-soft text-center">干支</div><div className="text-soft text-center">六亲</div><div className="text-soft text-center">世应</div><div className="text-soft text-center">伏神</div>
       {[6,5,4,3,2,1].map((pos) => {
         const line = yaoLines.find(l => l.position === pos)
         if (!line) return null
@@ -17,11 +17,11 @@ export default function HexagramDisplay({ data }: { data: HexagramData }) {
         const hasFush = line.fush_liuqin || line.fush_zhi
         return (
           <div key={`${showChanged ? 'c' : ''}${pos}`} className="contents">
-            <span className="text-warmgray py-0.5">{posLabel}</span>
-            <span className={`text-center py-0.5 ${showChanged ? 'text-gold-dim/40' : 'text-gold-dim'}`}>{line.liushen || '-'}</span>
-            <span className={`text-center py-0.5 ${isKong ? 'text-warmgray/40 line-through' : 'text-cream'}`}>{yaoSymbol}{changingMark}<br /><span className="text-[9px]">{line.gan}{line.zhi}</span></span>
-            <span className={`text-center py-0.5 ${isKong ? 'text-warmgray/40 line-through' : 'text-cream'}`}>{line.liuqin || '-'}</span>
-            <span className={`text-center py-0.5 font-bold ${line.shi_ying === 'shi' ? 'text-gold' : line.shi_ying === 'ying' ? 'text-sage' : 'text-warmgray'}`}>{syMark}</span>
+            <span className="text-soft py-0.5">{posLabel}</span>
+            <span className={`text-center py-0.5 ${showChanged ? 'text-matcha-dim/40' : 'text-matcha-dim'}`}>{line.liushen || '-'}</span>
+            <span className={`text-center py-0.5 ${isKong ? 'text-soft/40 line-through' : 'text-ink'}`}>{yaoSymbol}{changingMark}<br /><span className="text-[9px]">{line.gan}{line.zhi}</span></span>
+            <span className={`text-center py-0.5 ${isKong ? 'text-soft/40 line-through' : 'text-ink'}`}>{line.liuqin || '-'}</span>
+            <span className={`text-center py-0.5 font-bold ${line.shi_ying === 'shi' ? 'text-matcha' : line.shi_ying === 'ying' ? 'text-sage' : 'text-soft'}`}>{syMark}</span>
             <span className="text-center py-0.5 text-plum/70 text-[9px]">{hasFush ? `${line.fush_liuqin} ${line.fush_zhi}` : ''}</span>
           </div>
         )
@@ -30,15 +30,15 @@ export default function HexagramDisplay({ data }: { data: HexagramData }) {
   )
 
   return (
-    <div className="bg-ink/60 border border-line/50 rounded p-3 text-xs">
+    <div className="bg-cream/60 border border-line/50 rounded p-3 text-xs">
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
-          <span className="text-gold font-bold text-base">{data.hexagram_name}</span>
-          {data.changed_to && <><span className="text-warmgray">/</span><span className="text-rust font-bold text-base">{data.changed_to}</span></>}
+          <span className="text-matcha font-bold text-base">{data.hexagram_name}</span>
+          {data.changed_to && <><span className="text-soft">/</span><span className="text-rust font-bold text-base">{data.changed_to}</span></>}
         </div>
-        {sizhuStr && <span className="text-warmgray text-[10px]">{sizhuStr}</span>}
+        {sizhuStr && <span className="text-soft text-[10px]">{sizhuStr}</span>}
       </div>
-      <div className="flex gap-4 mb-2 text-warmgray text-[10px]">
+      <div className="flex gap-4 mb-2 text-soft text-[10px]">
         {sizhuStr && <span>月建: {data.yue_jian}<span className="ml-2">日辰: {data.ri_chen}</span></span>}
         <span>空亡: {data.xun_kong.join(' ')}</span>
       </div>

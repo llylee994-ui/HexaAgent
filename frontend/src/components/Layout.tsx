@@ -72,24 +72,24 @@ export default function Layout() {
   if (configured === false) return <SetupPage onDone={() => setConfigured(true)} />
 
   return (
-    <div className="h-screen flex flex-col bg-ink">
+    <div className="h-screen flex flex-col bg-cream">
       <header className="flex items-center justify-between px-3 py-2.5 border-b border-line flex-shrink-0">
         <div className="flex items-center gap-2">
-          <button onClick={() => setShowHistory(!showHistory)} className="text-warmgray hover:text-gold transition-colors p-1">&#9776;</button>
-          <h1 className="text-base md:text-lg font-bold text-gold tracking-wider">HexaAgent</h1>
-          <span className="hidden sm:inline text-[11px] text-warmgray tracking-wide">六爻解卦</span>
+          <button onClick={() => setShowHistory(!showHistory)} className="text-soft hover:text-matcha transition-colors p-1">&#9776;</button>
+          <h1 className="text-base md:text-lg font-bold text-matcha tracking-wider">HexaAgent</h1>
+          <span className="hidden sm:inline text-[11px] text-soft tracking-wide">六爻解卦</span>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={() => setShowThinking(!showThinking)} className="md:hidden text-xs text-warmgray hover:text-gold transition-colors">思维链</button>
-          <button onClick={() => setShowInput(!showInput)} className="md:hidden text-xs text-warmgray hover:text-gold transition-colors">排盘</button>
+          <button onClick={() => setShowThinking(!showThinking)} className="md:hidden text-xs text-soft hover:text-matcha transition-colors">思维链</button>
+          <button onClick={() => setShowInput(!showInput)} className="md:hidden text-xs text-soft hover:text-matcha transition-colors">排盘</button>
         </div>
       </header>
 
       <div className="flex-1 flex overflow-hidden relative">
         {showHistory && (
           <>
-            <div className="fixed inset-0 z-20 md:hidden bg-ink/80" onClick={() => setShowHistory(false)} />
-            <aside className="fixed md:relative left-0 top-0 bottom-0 z-30 w-64 md:w-56 border-r border-line bg-ink flex-shrink-0 flex flex-col">
+            <div className="fixed inset-0 z-20 md:hidden bg-cream/80" onClick={() => setShowHistory(false)} />
+            <aside className="fixed md:relative left-0 top-0 bottom-0 z-30 w-64 md:w-56 border-r border-line bg-cream flex-shrink-0 flex flex-col">
               <HistoryPanel currentId={sessionId} onSelect={handleSelectSession} onNew={handleNewSession} onDelete={(id) => { if (id === sessionId) handleNewSession() }} onClose={() => setShowHistory(false)} refreshKey={refreshKey} />
             </aside>
           </>
@@ -98,18 +98,18 @@ export default function Layout() {
         <aside className={`${showInput ? 'flex' : 'hidden'} md:flex w-full md:w-[25rem] border-r border-line flex-shrink-0 flex-col`}>
           <div className="p-3 border-b border-line flex items-center justify-between">
             <ModeSwitch />
-            <button onClick={() => setShowInput(false)} className="md:hidden text-xs text-gold-dim hover:text-gold">返回</button>
+            <button onClick={() => setShowInput(false)} className="md:hidden text-xs text-matcha-dim hover:text-matcha">返回</button>
           </div>
           <div className="flex-1 overflow-y-auto p-3 space-y-4">
             {mode === 'manual' && <HexagramEditor />}
             {mode === 'text' && <TextInput />}
-            {mode === 'auto' && <p className="text-warmgray text-xs text-center mt-8 px-4">输入你的问题与时间，自动排盘解卦</p>}
+            {mode === 'auto' && <p className="text-soft text-xs text-center mt-8 px-4">输入你的问题与时间，自动排盘解卦</p>}
           </div>
           <div className="p-3 border-t border-line">
             <div className="flex gap-1">
               <input type="text" value={inputText} onChange={(e) => setInputText(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit() } }} placeholder="输入问题..." disabled={isLoading}
-                className="flex-1 bg-ink border border-line rounded px-3 py-2 text-sm text-cream placeholder-warmgray focus:outline-none focus:border-gold-dim disabled:opacity-50" />
-              <button onClick={handleSubmit} disabled={isLoading} className="bg-gold-dim hover:bg-gold disabled:bg-line text-ink rounded px-4 py-2 text-sm font-medium transition-colors">发送</button>
+                className="flex-1 bg-cream border border-line rounded px-3 py-2 text-sm text-ink placeholder-soft focus:outline-none focus:border-matcha-dim disabled:opacity-50" />
+              <button onClick={handleSubmit} disabled={isLoading} className="bg-matcha hover:bg-matcha-dim disabled:bg-line text-ink rounded px-4 py-2 text-sm font-medium transition-colors">发送</button>
             </div>
           </div>
         </aside>
@@ -119,13 +119,13 @@ export default function Layout() {
           <div className="md:hidden p-2 border-t border-line">
             <div className="flex gap-1">
               <input type="text" value={inputText} onChange={(e) => setInputText(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit() } }} placeholder="输入问题..." disabled={isLoading}
-                className="flex-1 bg-ink border border-line rounded px-3 py-2 text-sm text-cream placeholder-warmgray focus:outline-none focus:border-gold-dim disabled:opacity-50" />
-              <button onClick={handleSubmit} disabled={isLoading} className="bg-gold-dim hover:bg-gold disabled:bg-line text-ink rounded px-4 py-2 text-sm font-medium transition-colors">发送</button>
+                className="flex-1 bg-cream border border-line rounded px-3 py-2 text-sm text-ink placeholder-soft focus:outline-none focus:border-matcha-dim disabled:opacity-50" />
+              <button onClick={handleSubmit} disabled={isLoading} className="bg-matcha hover:bg-matcha-dim disabled:bg-line text-ink rounded px-4 py-2 text-sm font-medium transition-colors">发送</button>
             </div>
           </div>
         </main>
 
-        <aside className={`${showThinking ? 'flex' : 'hidden'} md:flex w-64 border-l border-line flex-shrink-0 bg-ink flex-col`}>
+        <aside className={`${showThinking ? 'flex' : 'hidden'} md:flex w-64 border-l border-line flex-shrink-0 bg-cream flex-col`}>
           <ThinkingChain />
         </aside>
       </div>

@@ -7,10 +7,10 @@ export default function ModeSwitch() {
   const setMode = useChatStore((s) => s.setMode)
 
   return (
-    <div className="flex gap-0.5 bg-ink rounded border border-line p-0.5">
+    <div className="flex gap-0.5 bg-cream rounded border border-line p-0.5">
       {MODES.map((m) => (
         <button key={m.key} onClick={() => setMode(m.key)}
-          className={`flex-1 px-3 py-1 rounded text-xs tracking-wide transition-colors ${mode === m.key ? 'bg-gold-dim text-ink' : 'text-warmgray hover:text-cream'}`}>
+          className={`flex-1 px-3 py-1 rounded text-xs tracking-wide transition-colors ${mode === m.key ? 'bg-matcha text-ink' : 'text-soft hover:text-ink'}`}>
           {m.label}
         </button>
       ))}

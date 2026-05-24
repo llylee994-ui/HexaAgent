@@ -9,10 +9,10 @@ export default function ChatMessage({ message }: { message: ChatMessageType }) {
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-4`}>
       <div className={`max-w-[85%] ${isUser ? 'order-1' : ''}`}>
-        <div className={`text-[11px] mb-1 tracking-wide ${isUser ? 'text-right text-gold-dim' : 'text-left text-warmgray'}`}>
+        <div className={`text-[11px] mb-1 tracking-wide ${isUser ? 'text-right text-matcha-dim' : 'text-left text-soft'}`}>
           {isUser ? '问' : '断'}
         </div>
-        <div className={`rounded px-4 py-3 text-sm leading-relaxed ${isUser ? 'bg-gold/10 border border-gold/20 text-cream' : 'bg-paper border border-line text-cream'}`}>
+        <div className={`rounded px-4 py-3 text-sm leading-relaxed ${isUser ? 'bg-matcha/10 border border-matcha/20 text-ink' : 'bg-warm border border-line text-ink'}`}>
           {isUser ? <div className="whitespace-pre-wrap">{message.content}</div> : <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>}
           {message.hexagram && <div className="mt-3"><HexagramDisplay data={message.hexagram} /></div>}
         </div>
