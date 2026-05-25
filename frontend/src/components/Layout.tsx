@@ -38,7 +38,7 @@ export default function Layout() {
       .then(s => {
         if (s.messages && Array.isArray(s.messages)) {
           for (const m of s.messages) {
-            addMessage({ id: Math.random().toString(36).slice(2), role: m.role as 'user' | 'assistant', content: m.content, timestamp: Date.now() })
+            addMessage({ id: Math.random().toString(36).slice(2), role: m.role as 'user' | 'assistant', content: m.content, hexagram: m.hexagram || null, timestamp: Date.now() })
           }
         }
       }).catch(() => {})
@@ -70,6 +70,7 @@ export default function Layout() {
     setInputText('')
 
     addMessage({ id: Date.now().toString(), role: 'user', content: question, timestamp: Date.now() })
+    setShowInput(false)  // 手机端立即切回聊天
     setLoading(true)
     setThinkingChain([])
 
@@ -85,7 +86,7 @@ export default function Layout() {
       setRefreshKey((k) => k + 1)
     } catch (err) {
       addMessage({ id: (Date.now() + 1).toString(), role: 'assistant', content: `请求失败: ${err instanceof Error ? err.message : '未知错误'}`, timestamp: Date.now() })
-    } finally { setLoading(false); setShowInput(false) }
+    } finally { setLoading(false) }
   }
 
   const handleNewSession = (backendId?: string) => {
@@ -147,10 +148,11 @@ export default function Layout() {
             {mode === 'auto' && <p className="text-soft text-xs text-center mt-8 px-4">输入你的问题与时间，自动排盘解卦</p>}
           </div>
           <div className="p-3 border-t border-line">
-            <div className="flex gap-1">
-              <input type="text" value={inputText} onChange={(e) => setInputText(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit() } }} placeholder="输入问题..." disabled={isLoading}
-                className="flex-1 bg-cream border border-line rounded px-3 py-2 text-sm text-ink placeholder-soft focus:outline-none focus:border-matcha-dim disabled:opacity-50" />
-              <button onClick={handleSubmit} disabled={isLoading} className="bg-matcha hover:bg-matcha-dim disabled:bg-line text-ink rounded px-4 py-2 text-sm font-medium transition-colors">发送</button>
+            <div className="flex gap-1 items-end">
+              <textarea value={inputText} onChange={(e) => { setInputText(e.target.value); const t = e.target; t.style.height = 'auto'; t.style.height = Math.min(t.scrollHeight, 120) + 'px' }}
+                onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit() } }} placeholder="输入问题..." disabled={isLoading} rows={1}
+                className="flex-1 bg-cream border border-line rounded px-3 py-2 text-sm text-ink placeholder-soft focus:outline-none focus:border-matcha-dim disabled:opacity-50 resize-none" />
+              <button onClick={handleSubmit} disabled={isLoading} className="bg-matcha hover:bg-matcha-dim disabled:bg-line text-ink rounded px-4 py-2 text-sm font-medium transition-colors flex-shrink-0">发送</button>
             </div>
           </div>
         </aside>
@@ -158,10 +160,11 @@ export default function Layout() {
         <main className="flex-1 flex flex-col overflow-hidden min-w-0">
           <ChatWindow />
           <div className="md:hidden p-2 border-t border-line">
-            <div className="flex gap-1">
-              <input type="text" value={inputText} onChange={(e) => setInputText(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit() } }} placeholder="输入问题..." disabled={isLoading}
-                className="flex-1 bg-cream border border-line rounded px-3 py-2 text-sm text-ink placeholder-soft focus:outline-none focus:border-matcha-dim disabled:opacity-50" />
-              <button onClick={handleSubmit} disabled={isLoading} className="bg-matcha hover:bg-matcha-dim disabled:bg-line text-ink rounded px-4 py-2 text-sm font-medium transition-colors">发送</button>
+            <div className="flex gap-1 items-end">
+              <textarea value={inputText} onChange={(e) => { setInputText(e.target.value); const t = e.target; t.style.height = 'auto'; t.style.height = Math.min(t.scrollHeight, 120) + 'px' }}
+                onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit() } }} placeholder="输入问题..." disabled={isLoading} rows={1}
+                className="flex-1 bg-cream border border-line rounded px-3 py-2 text-sm text-ink placeholder-soft focus:outline-none focus:border-matcha-dim disabled:opacity-50 resize-none" />
+              <button onClick={handleSubmit} disabled={isLoading} className="bg-matcha hover:bg-matcha-dim disabled:bg-line text-ink rounded px-4 py-2 text-sm font-medium transition-colors flex-shrink-0">发送</button>
             </div>
           </div>
         </main>

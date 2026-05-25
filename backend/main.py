@@ -188,7 +188,7 @@ async def api_chat(request: ChatRequest):
     session = get_or_create_session(request.session_id)
     msgs = session.get("messages", [])
     msgs.append({"role": "user", "content": request.message})
-    msgs.append({"role": "assistant", "content": answer})
+    msgs.append({"role": "assistant", "content": answer, "hexagram": hexagram.model_dump() if hexagram else None})
     update_session(request.session_id, request.message[:50], msgs)
 
     # 保存卦例到用户长期记忆
