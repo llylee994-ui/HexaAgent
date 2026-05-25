@@ -29,15 +29,15 @@ export default function Layout() {
 
   useEffect(() => { localStorage.setItem('hexa_session', sessionId) }, [sessionId])
 
-  // 页面加载时自动恢复当前会话消息
+  // 页面加载时 / 切换会话时自动恢复消息
   useEffect(() => {
-    if (!sessionId || sessionId === 'default') return
+    if (!sessionId) return
+    clearMessages()
     fetch(`/api/sessions/${sessionId}`)
       .then(r => r.json())
       .then(s => {
-        if (s.messages) {
-          clearMessages()
-          for (const m of s.messages as Array<{role: string; content: string}>) {
+        if (s.messages && Array.isArray(s.messages)) {
+          for (const m of s.messages) {
             addMessage({ id: Math.random().toString(36).slice(2), role: m.role as 'user' | 'assistant', content: m.content, timestamp: Date.now() })
           }
         }
@@ -89,18 +89,14 @@ export default function Layout() {
   }
 
   const handleNewSession = (backendId?: string) => {
-    setSessionId(backendId || Math.random().toString(36).slice(2, 14))
-    clearMessages()
+    const newId = backendId || Math.random().toString(36).slice(2, 14)
+    setSessionId(newId)
     setShowHistory(false)
   }
 
-  const handleSelectSession = async (id: string) => {
-    setSessionId(id); setShowHistory(false); clearMessages(); setLoading(true)
-    try {
-      const res = await fetch(`/api/sessions/${id}`); const s = await res.json()
-      if (s.messages) for (const m of s.messages as Array<{role: string; content: string}>) addMessage({ id: Math.random().toString(36).slice(2), role: m.role as 'user' | 'assistant', content: m.content, timestamp: Date.now() })
-    } catch {}
-    setLoading(false)
+  const handleSelectSession = (id: string) => {
+    setSessionId(id)
+    setShowHistory(false)
   }
 
   if (configured === null) return (
