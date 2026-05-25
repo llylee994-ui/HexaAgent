@@ -12,13 +12,7 @@ from app.session_manager import (
 from app.memory.user_case_store import UserCaseStore
 from app.config import is_configured, save_settings, DEEPSEEK_BASE_URL, MODEL_NAME
 
-_agent = None
-
-def get_agent():
-    global _agent
-    if _agent is None:
-        _agent = create_agent()
-    return _agent
+agent = create_agent()
 
 app = FastAPI(title="HexaAgent API", description="六爻解卦智能体后端")
 
@@ -48,10 +42,9 @@ def config_setup(data: dict):
         base_url=data.get("base_url", DEEPSEEK_BASE_URL),
         model=data.get("model", MODEL_NAME),
     )
-    # 重建 agent 以应用新配置
-    global _agent
-    _agent = None
-    get_agent()
+    # 需要重启 agent 才能生效
+    global agent
+    agent = create_agent()
     return {"success": True}
 
 
@@ -130,7 +123,7 @@ async def api_chat(request: ChatRequest):
     agent_messages.append(("user", user_message))
 
     try:
-        result = await get_agent().ainvoke(
+        result = await agent.ainvoke(
             {"messages": agent_messages},
             config={"configurable": {"thread_id": request.session_id}},
         )
