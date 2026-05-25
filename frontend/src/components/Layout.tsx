@@ -28,6 +28,38 @@ export default function Layout() {
   const [showInput, setShowInput] = useState(false)
 
   useEffect(() => { localStorage.setItem('hexa_session', sessionId) }, [sessionId])
+
+  // 页面加载时自动恢复当前会话消息
+  useEffect(() => {
+    if (!sessionId || sessionId === 'default') return
+    fetch(`/api/sessions/${sessionId}`)
+      .then(r => r.json())
+      .then(s => {
+        if (s.messages) {
+          clearMessages()
+          for (const m of s.messages as Array<{role: string; content: string}>) {
+            addMessage({ id: Math.random().toString(36).slice(2), role: m.role as 'user' | 'assistant', content: m.content, timestamp: Date.now() })
+          }
+        }
+      }).catch(() => {})
+  }, [sessionId])
+
+  // 多端同步：每 5 秒拉取一次最新消息
+  useEffect(() => {
+    const poll = setInterval(async () => {
+      if (!sessionId || isLoading) return
+      try {
+        const r = await fetch(`/api/sessions/${sessionId}`)
+        const s = await r.json()
+        if (s.messages && s.messages.length !== useChatStore.getState().messages.length) {
+          clearMessages()
+          for (const m of s.messages) addMessage({ id: Math.random().toString(36).slice(2), role: m.role as 'user' | 'assistant', content: m.content, timestamp: Date.now() })
+        }
+      } catch {}
+    }, 5000)
+    return () => clearInterval(poll)
+  }, [sessionId, isLoading])
+
   useEffect(() => {
     fetch('/api/config/status').then(r => r.json()).then(d => setConfigured(d.configured)).catch(() => setConfigured(null))
   }, [])
@@ -53,7 +85,7 @@ export default function Layout() {
       setRefreshKey((k) => k + 1)
     } catch (err) {
       addMessage({ id: (Date.now() + 1).toString(), role: 'assistant', content: `请求失败: ${err instanceof Error ? err.message : '未知错误'}`, timestamp: Date.now() })
-    } finally { setLoading(false) }
+    } finally { setLoading(false); setShowInput(false) }
   }
 
   const handleNewSession = (backendId?: string) => {
