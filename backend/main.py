@@ -10,7 +10,7 @@ from app.session_manager import (
     get_or_create_session, update_session, list_sessions, get_session, delete_session,
 )
 from app.memory.user_case_store import UserCaseStore
-from app.config import is_configured, save_settings, DEEPSEEK_BASE_URL, MODEL_NAME
+from app.config import is_configured, save_settings, DEEPSEEK_BASE_URL, MODEL_NAME, THINKING_MODE, REASONING_EFFORT
 
 agent = create_agent()
 
@@ -32,7 +32,11 @@ def health():
 
 @app.get("/api/config/status")
 def config_status():
-    return {"configured": is_configured()}
+    return {
+        "configured": is_configured(),
+        "thinking_mode": THINKING_MODE,
+        "reasoning_effort": REASONING_EFFORT,
+    }
 
 
 @app.post("/api/config/setup")
@@ -45,7 +49,11 @@ def config_setup(data: dict):
     # 需要重启 agent 才能生效
     global agent
     agent = create_agent()
-    return {"success": True}
+    return {
+        "success": True,
+        "thinking_mode": THINKING_MODE,
+        "reasoning_effort": REASONING_EFFORT,
+    }
 
 
 # ── 会话管理 ──────────────────────────────────
@@ -161,6 +169,11 @@ async def api_chat(request: ChatRequest):
                 tool_names = [tc.get("name", "") for tc in msg.tool_calls]
                 thinking_chain.append(f"Agent 决定调用: {', '.join(tool_names)}")
                 continue
+            # 提取思考模式中的推理内容
+            reasoning = getattr(msg, "additional_kwargs", {}).get("reasoning_content", "")
+            if reasoning:
+                thinking_chain.append(f"深度思考: {reasoning[:200]}{'...' if len(reasoning) > 200 else ''}")
+
             content = getattr(msg, "content", "")
             if isinstance(content, str) and content.strip():
                 answer = content

@@ -17,19 +17,25 @@ if os.path.exists(SETTINGS_FILE):
 DEEPSEEK_API_KEY = _settings.get("api_key") or os.getenv("DEEPSEEK_API_KEY", "")
 DEEPSEEK_BASE_URL = _settings.get("base_url") or os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com/v1")
 MODEL_NAME = _settings.get("model") or os.getenv("MODEL_NAME", "deepseek-chat")
+THINKING_MODE = _settings.get("thinking_mode", False)
+REASONING_EFFORT = _settings.get("reasoning_effort", "medium")
 
 
-def save_settings(api_key: str, base_url: str, model: str):
+def save_settings(api_key: str, base_url: str, model: str, thinking_mode: bool = False, reasoning_effort: str = "medium"):
     """保存配置到 settings.json"""
     os.makedirs(os.path.dirname(SETTINGS_FILE), exist_ok=True)
-    settings = {"api_key": api_key, "base_url": base_url, "model": model}
+    settings = {
+        "api_key": api_key, "base_url": base_url, "model": model,
+        "thinking_mode": thinking_mode, "reasoning_effort": reasoning_effort,
+    }
     with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
         json.dump(settings, f, ensure_ascii=False, indent=2)
-    # 更新当前模块变量
-    global DEEPSEEK_API_KEY, DEEPSEEK_BASE_URL, MODEL_NAME
+    global DEEPSEEK_API_KEY, DEEPSEEK_BASE_URL, MODEL_NAME, THINKING_MODE, REASONING_EFFORT
     DEEPSEEK_API_KEY = api_key
     DEEPSEEK_BASE_URL = base_url
     MODEL_NAME = model
+    THINKING_MODE = thinking_mode
+    REASONING_EFFORT = reasoning_effort
 
 
 def is_configured() -> bool:

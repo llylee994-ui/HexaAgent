@@ -7,7 +7,7 @@ from langchain_openai import ChatOpenAI
 from langchain_core.tools import tool
 from langgraph.prebuilt import create_react_agent
 
-from .config import DEEPSEEK_API_KEY, DEEPSEEK_BASE_URL, MODEL_NAME
+from .config import DEEPSEEK_API_KEY, DEEPSEEK_BASE_URL, MODEL_NAME, THINKING_MODE, REASONING_EFFORT
 from .core.paipan import paipan
 from .models import HexagramData
 from .knowledge.search_tool import create_guji_search_tool
@@ -146,12 +146,16 @@ def get_hexagram(date_str: str, time_str: str, question: str = "") -> str:
 
 def create_agent():
     """创建六爻解卦 Agent"""
-    llm = ChatOpenAI(
-        model=MODEL_NAME,
-        api_key=DEEPSEEK_API_KEY,
-        base_url=DEEPSEEK_BASE_URL,
-        temperature=0.7,
-    )
+    llm_kwargs = {
+        "model": MODEL_NAME,
+        "api_key": DEEPSEEK_API_KEY,
+        "base_url": DEEPSEEK_BASE_URL,
+        "temperature": 0.7,
+    }
+    if THINKING_MODE:
+        llm_kwargs["model_kwargs"] = {"reasoning_effort": REASONING_EFFORT}
+
+    llm = ChatOpenAI(**llm_kwargs)
 
     guji_search = create_guji_search_tool()
     memory_search = create_memory_search_tool()
