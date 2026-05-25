@@ -28,7 +28,9 @@ export default function Layout() {
   const [showInput, setShowInput] = useState(false)
 
   useEffect(() => { localStorage.setItem('hexa_session', sessionId) }, [sessionId])
-  useEffect(() => { fetch('/api/config/status').then(r => r.json()).then(d => setConfigured(d.configured)).catch(() => {}) }, [])
+  useEffect(() => {
+    fetch('/api/config/status').then(r => r.json()).then(d => setConfigured(d.configured)).catch(() => setConfigured(null))
+  }, [])
 
   const handleSubmit = async () => {
     const question = inputText.trim()
@@ -68,6 +70,17 @@ export default function Layout() {
     } catch {}
     setLoading(false)
   }
+
+  if (configured === null) return (
+    <div className="min-h-screen bg-cream flex items-center justify-center">
+      <div className="text-center space-y-4">
+        <p className="text-matcha-dim text-lg tracking-widest">HexaAgent</p>
+        <p className="text-soft text-sm">正在连接后端服务...</p>
+        <p className="text-soft text-xs">如果长时间无响应，请确认后端窗口是否报错</p>
+        <button onClick={() => window.location.reload()} className="text-matcha text-xs hover:text-matcha-dim transition-colors">重试</button>
+      </div>
+    </div>
+  )
 
   if (configured === false) return <SetupPage onDone={() => setConfigured(true)} />
 
