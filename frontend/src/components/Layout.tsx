@@ -69,7 +69,10 @@ export default function Layout() {
     if (!question || isLoading) return
     setInputText('')
 
-    addMessage({ id: Date.now().toString(), role: 'user', content: question, timestamp: Date.now() })
+    // 手动模式：用户消息也带上卦象数据
+    let userHexagram = null
+    if (mode === 'manual') userHexagram = buildHexagramData(question)
+    addMessage({ id: Date.now().toString(), role: 'user', content: question, hexagram: userHexagram, timestamp: Date.now() })
     setShowInput(false)  // 手机端立即切回聊天
     setLoading(true)
     setThinkingChain([])

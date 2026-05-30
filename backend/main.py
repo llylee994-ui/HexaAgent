@@ -173,12 +173,12 @@ async def api_chat(request: ChatRequest):
             thinking_chain.append(f"调用工具: {name}")
             tool_content = getattr(msg, "content", "")
             try:
-                # 从嵌入的 RAW_HEXAGRAM 标记中提取 JSON
+                # 从嵌入的 RAW_HEXAGRAM 块中提取 JSON
                 if isinstance(tool_content, str) and "RAW_HEXAGRAM" in tool_content:
-                    start = tool_content.find("<!--RAW_HEXAGRAM\n") + len("<!--RAW_HEXAGRAM\n")
-                    end = tool_content.find("\nRAW_HEXAGRAM-->")
-                    if start > 0 and end > start:
-                        hexagram = HexagramData.model_validate(_json.loads(tool_content[start:end]))
+                    import re
+                    m = re.search(r'RAW_HEXAGRAM\s*\n(.*?)\n\s*RAW_HEXAGRAM', tool_content, re.DOTALL)
+                    if m:
+                        hexagram = HexagramData.model_validate(_json.loads(m.group(1)))
             except Exception:
                 pass
         elif t == "ai":
@@ -204,7 +204,7 @@ async def api_chat(request: ChatRequest):
     # 持久化会话消息
     session = get_or_create_session(request.session_id)
     msgs = session.get("messages", [])
-    msgs.append({"role": "user", "content": request.message})
+    msgs.append({"role": "user", "content": request.message, "hexagram": request.hexagram_data.model_dump() if request.hexagram_data else None})
     msgs.append({"role": "assistant", "content": answer, "hexagram": hexagram.model_dump() if hexagram else None})
     update_session(request.session_id, request.message[:50], msgs)
 
