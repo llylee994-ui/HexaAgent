@@ -116,8 +116,13 @@ async def api_chat(request: ChatRequest):
             "请根据以上卦象数据进行完整解读。注意：如果数据中标注了伏神，请在分析时考虑伏神的含义。"
         )
     else:
-        now_str = f"当前时间是 {__import__('datetime').datetime.now().strftime('%Y年%m月%d日 %H:%M')}"
-        user_message = f"{now_str}。用户问题：{request.message}"
+        # 只在会话首条消息注入时间（后续消息自动沿用已排的卦）
+        session = get_or_create_session(request.session_id)
+        if session.get("messages"):
+            user_message = request.message
+        else:
+            now_str = f"当前时间是 {__import__('datetime').datetime.now().strftime('%Y年%m月%d日 %H:%M')}"
+            user_message = f"{now_str}。用户问题：{request.message}"
 
     # 加载历史消息（多轮对话上下文）
     session = get_or_create_session(request.session_id)
