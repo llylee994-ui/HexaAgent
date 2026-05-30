@@ -97,7 +97,16 @@ def format_hexagram_text(hd: HexagramData) -> str:
         lines.append("  " + " ".join(parts))
 
     if hd.changed_lines:
-        lines.append(f"\n—— 变卦（{hd.changed_to or '未命名'}）——")
+        # 尝试从变卦六爻反推卦名
+        changed_name = hd.changed_to
+        if not changed_name and hd.changed_lines and len(hd.changed_lines) == 6:
+            from .core.bagua import _find_trigram_by_lines, HEXAGRAM_TABLE
+            cl = hd.changed_lines
+            lo = _find_trigram_by_lines([l.type for l in cl[:3]])
+            up = _find_trigram_by_lines([l.type for l in cl[3:6]])
+            if lo and up and (up, lo) in HEXAGRAM_TABLE:
+                changed_name = HEXAGRAM_TABLE[(up, lo)][0]
+        lines.append(f"\n—— 变卦（{changed_name or '未命名'}）——")
         changed_display = sorted(hd.changed_lines, key=lambda l: l.position, reverse=True)
         for yao in changed_display:
             parts = [POS_LABEL.get(yao.position, f"爻{yao.position}")]

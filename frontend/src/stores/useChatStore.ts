@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import type { ChatMessage, YaoLine, HexagramData } from '../types'
-import { getLiushenByDayGan, getKongWang, findTrigramByLines, getHexagramName, getHexagramNazhi, getHexagramPalaceWuxing, getLiuqin, getZhiWuxing } from '../utils/hexagrams'
+import { getLiushenByDayGan, getKongWang, findTrigramByLines, getHexagramName, getHexagramNazhi, getHexagramPalaceWuxing, getLiuqin, getZhiWuxing, getTrigramPair } from '../utils/hexagrams'
 
 const emptyYaoLine = (pos: number): YaoLine => ({
   position: pos,
@@ -283,10 +283,19 @@ export const useChatStore = create<ChatState>((set, get) => ({
         }))
       : []
 
+    // 从变卦六爻反推卦名
+    let changedName: string | null = null
+    if (hasChanging) {
+      const clTypes = changedLines.map((l) => l.type)
+      const cl = findTrigramByLines(clTypes.slice(0, 3))
+      const cu = findTrigramByLines(clTypes.slice(3, 6))
+      if (cl && cu) changedName = getHexagramName(cu, cl)
+    }
+
     return {
       mode: 'manual' as const,
       hexagram_name: s.benGuaName || '',
-      changed_to: null,
+      changed_to: changedName,
       yao_lines: yaoLines,
       changed_lines: changedLines,
       yue_jian: s.sizhuMonth ? s.sizhuMonth.slice(1) : '',
