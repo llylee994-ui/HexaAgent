@@ -127,12 +127,24 @@ async def api_chat(request: ChatRequest):
     # 加载历史消息（多轮对话上下文）
     session = get_or_create_session(request.session_id)
     history = session.get("messages", [])
-    # 只加载最近 10 条消息，避免 token 溢出
+    # 只加载最近 10 条消息
     recent = history[-10:] if len(history) > 10 else history
     agent_messages = []
     for h in recent:
         role = "user" if h["role"] == "user" else "assistant"
-        agent_messages.append((role, h["content"]))
+        content = h["content"]
+        # 将保存的卦象数据附到 assistant 消息前面，让 AI 知道之前排了什么卦
+        if h.get("hexagram") and isinstance(h["hexagram"], dict):
+            hd = h["hexagram"]
+            sizhu_str = f"{hd['sizhu']['year']}年 {hd['sizhu']['month']}月 {hd['sizhu']['day']}日 {hd['sizhu']['hour']}时" if hd.get("sizhu") else ""
+            hex_prefix = f"[此前的排盘结果：{hd.get('hexagram_name', '')}"
+            if hd.get("changed_to"):
+                hex_prefix += f" 之 {hd['changed_to']}"
+            if sizhu_str:
+                hex_prefix += f"，四柱：{sizhu_str}"
+            hex_prefix += "]\n\n"
+            content = hex_prefix + content
+        agent_messages.append((role, content))
     agent_messages.append(("user", user_message))
 
     try:
