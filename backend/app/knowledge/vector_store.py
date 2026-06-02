@@ -74,47 +74,41 @@ class VectorStore:
         if not self.chunks:
             return []
 
-        # 优先 text2vec 语义搜索
+        docs = [c["content"] for c in self.chunks]
+
+        # text2vec 语义分
+        semantic_scores = None
         if self.embeddings is not None and len(self.embeddings) == len(self.chunks):
             q_emb = self._embed([query])
             if q_emb is not None:
                 from sklearn.metrics.pairwise import cosine_similarity
-                sims = cosine_similarity(q_emb, self.embeddings)[0]
-                top = np.argsort(sims)[::-1][:n_results]
-                items = []
-                for idx in top:
-                    if sims[idx] > 0.3:
-                        items.append({
-                            "id": f"chunk_{idx}",
-                            "content": self.chunks[idx]["content"],
-                            "metadata": self.chunks[idx].get("metadata", {}),
-                            "score": float(sims[idx]),
-                        })
-                if items:
-                    return items
+                semantic_scores = cosine_similarity(q_emb, self.embeddings)[0]
 
-        # 兜底：TF-IDF
-        return self._tfidf_search(query, n_results)
-
-    def _tfidf_search(self, query: str, n_results: int) -> list[dict]:
+        # BM25 关键词分
         from sklearn.feature_extraction.text import TfidfVectorizer
         from sklearn.metrics.pairwise import cosine_similarity
-
-        docs = [c["content"] for c in self.chunks]
-        vec = TfidfVectorizer(max_features=5000, ngram_range=(1, 2))
+        vec = TfidfVectorizer(max_features=5000, ngram_range=(1, 2), sublinear_tf=True)
         matrix = vec.fit_transform(docs)
         q_vec = vec.transform([query])
-        sims = cosine_similarity(q_vec, matrix)[0]
-        top = np.argsort(sims)[::-1][:n_results]
+        bm25_scores = cosine_similarity(q_vec, matrix)[0]
+
+        # 混合打分：语义 0.6 + BM25 0.4
+        if semantic_scores is not None:
+            combined = semantic_scores * 0.6 + bm25_scores * 0.4
+        else:
+            combined = bm25_scores
+
+        top = np.argsort(combined)[::-1][:n_results]
 
         items = []
         for idx in top:
-            if sims[idx] > 0:
+            score = float(combined[idx])
+            if score > 0.1:
                 items.append({
                     "id": f"chunk_{idx}",
-                    "content": self.chunks[idx]["content"],
+                    "content": docs[idx],
                     "metadata": self.chunks[idx].get("metadata", {}),
-                    "score": float(sims[idx]),
+                    "score": score,
                 })
         return items
 
