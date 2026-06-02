@@ -1,5 +1,6 @@
 """HexaAgent FastAPI 后端入口"""
 
+import numpy as np
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -83,6 +84,79 @@ def api_new_session():
 def api_delete_session(session_id: str):
     delete_session(session_id)
     return {"status": "deleted"}
+
+
+# ── 知识库管理 ──────────────────────────────
+
+from app.knowledge.vector_store import VectorStore as KBStore
+
+@app.get("/api/knowledge")
+def api_knowledge_list(search: str = "", limit: int = 100, offset: int = 0):
+    store = KBStore()
+    items = []
+    for i, c in enumerate(store.chunks):
+        if search and search not in c["content"]:
+            continue
+        items.append({
+            "id": i,
+            "content": c["content"],
+            "source": c.get("metadata", {}).get("source", ""),
+            "keywords": c.get("metadata", {}).get("keywords", ""),
+        })
+    total = len(items)
+    return {"items": items[offset:offset + limit], "total": total}
+
+
+@app.post("/api/knowledge")
+def api_knowledge_add(data: dict):
+    store = KBStore()
+    chunk = {
+        "content": data.get("content", ""),
+        "metadata": {"source": data.get("source", "用户"), "keywords": data.get("keywords", ""), "index": store.count()},
+    }
+    store.add_chunks([chunk])
+    return {"success": True, "id": store.count() - 1}
+
+
+@app.put("/api/knowledge/{chunk_id}")
+def api_knowledge_update(chunk_id: int, data: dict):
+    store = KBStore()
+    if chunk_id < 0 or chunk_id >= store.count():
+        return {"error": "not found"}, 404
+    store.chunks[chunk_id]["content"] = data.get("content", store.chunks[chunk_id]["content"])
+    store.chunks[chunk_id]["metadata"]["source"] = data.get("source", store.chunks[chunk_id]["metadata"].get("source", ""))
+    store.chunks[chunk_id]["metadata"]["keywords"] = data.get("keywords", store.chunks[chunk_id]["metadata"].get("keywords", ""))
+    # 重新生成向量
+    from app.knowledge.vector_store import VectorStore as VS
+    emb = store._embed([store.chunks[chunk_id]["content"]])
+    if emb is not None and store.embeddings is not None:
+        store.embeddings[chunk_id] = emb[0]
+    store._save()
+    return {"success": True}
+
+
+@app.delete("/api/knowledge/{chunk_id}")
+def api_knowledge_delete(chunk_id: int):
+    store = KBStore()
+    if chunk_id < 0 or chunk_id >= store.count():
+        return {"error": "not found"}, 404
+    store.chunks.pop(chunk_id)
+    if store.embeddings is not None and len(store.embeddings) > chunk_id:
+        store.embeddings = np.delete(store.embeddings, chunk_id, axis=0)  # type: ignore
+    store._save()
+    return {"success": True}
+
+
+@app.post("/api/knowledge/reindex")
+def api_knowledge_reindex():
+    store = KBStore()
+    docs = [c["content"] for c in store.chunks]
+    embs = store._embed(docs)
+    if embs is not None:
+        store.embeddings = embs
+        store._save()
+        return {"success": True, "count": len(docs)}
+    return {"success": False, "error": "模型未加载"}
 
 
 @app.get("/api/sizhu")

@@ -7,6 +7,7 @@ import TextInput from './TextInput'
 import ChatWindow from './ChatWindow'
 import ThinkingChain from './ThinkingChain'
 import HistoryPanel from './HistoryPanel'
+import KnowledgePanel from './KnowledgePanel'
 import SetupPage from './SetupPage'
 
 export default function Layout() {
@@ -26,6 +27,7 @@ export default function Layout() {
   const [refreshKey, setRefreshKey] = useState(0)
   const [configured, setConfigured] = useState<boolean | null>(null)
   const [showInput, setShowInput] = useState(false)
+  const [showKnowledge, setShowKnowledge] = useState(false)
 
   useEffect(() => { localStorage.setItem('hexa_session', sessionId) }, [sessionId])
 
@@ -127,6 +129,7 @@ export default function Layout() {
         <div className="flex items-center gap-2">
           <button onClick={() => setShowThinking(!showThinking)} className="md:hidden text-xs text-soft hover:text-matcha transition-colors">思维链</button>
           <button onClick={() => setShowInput(!showInput)} className="md:hidden text-xs text-soft hover:text-matcha transition-colors">排盘</button>
+          <button onClick={() => setShowKnowledge(!showKnowledge)} className="text-xs text-soft hover:text-matcha transition-colors">知识库</button>
         </div>
       </header>
 
@@ -175,6 +178,15 @@ export default function Layout() {
         <aside className={`${showThinking ? 'flex' : 'hidden'} md:flex w-64 panel-shadow rounded flex-shrink-0 bg-cream flex-col`}>
           <ThinkingChain />
         </aside>
+
+        {showKnowledge && (
+          <>
+            <div className="fixed inset-0 z-40 md:hidden bg-cream/80" onClick={() => setShowKnowledge(false)} />
+            <aside className="fixed right-0 top-0 bottom-0 z-50 w-full md:w-[30rem] border-l border-line bg-cream flex-shrink-0 flex flex-col">
+              <KnowledgePanel onClose={() => setShowKnowledge(false)} />
+            </aside>
+          </>
+        )}
       </div>
     </div>
   )
