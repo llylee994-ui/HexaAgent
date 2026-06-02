@@ -4,21 +4,27 @@ import remarkGfm from 'remark-gfm'
 import type { ChatMessage as ChatMessageType } from '../types'
 import HexagramDisplay from './HexagramDisplay'
 
-// 已收录的消息 ID，持久化到 localStorage
-function isCollected(id: string): boolean {
-  try { return JSON.parse(localStorage.getItem('hexa_collected') || '[]').includes(id) } catch { return false }
+// 用内容指纹做持久化（消息 id 在刷新后会变）
+function fingerprint(content: string): string {
+  let h = 0
+  for (let i = 0; i < Math.min(content.length, 200); i++) h = ((h << 5) - h + content.charCodeAt(i)) | 0
+  return h.toString(36)
 }
-function markCollected(id: string) {
+function isCollected(content: string): boolean {
+  try { return JSON.parse(localStorage.getItem('hexa_collected') || '[]').includes(fingerprint(content)) } catch { return false }
+}
+function markCollected(content: string) {
   try {
     const list = JSON.parse(localStorage.getItem('hexa_collected') || '[]')
-    if (!list.includes(id)) { list.push(id); localStorage.setItem('hexa_collected', JSON.stringify(list)) }
+    const fp = fingerprint(content)
+    if (!list.includes(fp)) { list.push(fp); localStorage.setItem('hexa_collected', JSON.stringify(list)) }
   } catch {}
 }
 
 export default function ChatMessage({ message, userQuestion }: { message: ChatMessageType; userQuestion?: string }) {
   const isUser = message.role === 'user'
   const [saving, setSaving] = useState(false)
-  const [done, setDone] = useState(() => isCollected(message.id))
+  const [done, setDone] = useState(() => isCollected(message.content))
 
   const handleCollect = async () => {
     let content = ''
@@ -43,7 +49,7 @@ export default function ChatMessage({ message, userQuestion }: { message: ChatMe
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ content, source: '用户收录' }),
     })
-    markCollected(message.id)
+    markCollected(message.content)
     setSaving(false)
     setDone(true)
   }
