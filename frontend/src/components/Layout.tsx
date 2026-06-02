@@ -18,7 +18,6 @@ export default function Layout() {
   const setLoading = useChatStore((s) => s.setLoading)
   const setThinkingChain = useChatStore((s) => s.setThinkingChain)
   const buildHexagramData = useChatStore((s) => s.buildHexagramData)
-  const loadCollectedFps = useChatStore((s) => s.loadCollectedFps)
   const textInput = useChatStore((s) => s.textInput)
 
   const [sessionId, setSessionId] = useState(() => localStorage.getItem('hexa_session') || 'default')
@@ -65,7 +64,6 @@ export default function Layout() {
 
   useEffect(() => {
     fetch('/api/config/status').then(r => r.json()).then(d => setConfigured(d.configured)).catch(() => setConfigured(null))
-    loadCollectedFps()
   }, [])
 
   const handleSubmit = async () => {

@@ -1,49 +1,10 @@
-import { useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import type { ChatMessage as ChatMessageType } from '../types'
-import { useChatStore } from '../stores/useChatStore'
 import HexagramDisplay from './HexagramDisplay'
 
-function fingerprint(content: string): string {
-  let h = 0
-  for (let i = 0; i < Math.min(content.length, 200); i++) h = ((h << 5) - h + content.charCodeAt(i)) | 0
-  return h.toString(36)
-}
-
-export default function ChatMessage({ message, userQuestion }: { message: ChatMessageType; userQuestion?: string }) {
+export default function ChatMessage({ message }: { message: ChatMessageType; userQuestion?: string }) {
   const isUser = message.role === 'user'
-  const [saving, setSaving] = useState(false)
-  const collectedFps = useChatStore((s) => s.collectedFps)
-  const [done, setDone] = useState(() => collectedFps.has(fingerprint(message.content)))
-
-  const handleCollect = async () => {
-    let content = ''
-    if (userQuestion) content += `【问题】${userQuestion}\n`
-    if (message.hexagram) {
-      const h = message.hexagram
-      const sizhu = h.sizhu ? `${h.sizhu.year}年${h.sizhu.month}月${h.sizhu.day}日${h.sizhu.hour}时` : ''
-      const changing = h.changed_to ? ` 之 ${h.changed_to}` : ''
-      content += `【卦象】${h.hexagram_name}${changing}`
-      if (sizhu) content += ` 四柱：${sizhu}`
-      const yaoInfo = h.yao_lines.map(l => {
-        const d = l.changing ? '○' : ''
-        const sy = l.shi_ying === 'shi' ? '世' : l.shi_ying === 'ying' ? '应' : ''
-        return `${['','初','二','三','四','五','上'][l.position]}${l.gan}${l.zhi}${l.liuqin}${d}${sy}`
-      }).join(' ')
-      content += `\n【六爻】${yaoInfo}\n`
-    }
-    content += `\n【断语】${message.content}`
-
-    setSaving(true)
-    await fetch('/api/knowledge', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content, source: '用户收录' }),
-    })
-    setSaving(false)
-    setDone(true)
-    useChatStore.getState().loadCollectedFps()
-  }
 
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-4`}>
@@ -55,15 +16,6 @@ export default function ChatMessage({ message, userQuestion }: { message: ChatMe
           {isUser ? <div className="whitespace-pre-wrap">{message.content}</div> : <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>}
           {message.hexagram && <div className="mt-3"><HexagramDisplay data={message.hexagram} /></div>}
         </div>
-        {!isUser && message.content && (
-          <button
-            onClick={handleCollect}
-            disabled={saving || done}
-            className={`mt-1 text-[11px] transition-colors tracking-wide ${done ? 'text-matcha-dim/40' : saving ? 'text-matcha animate-pulse' : 'text-soft hover:text-matcha'}`}
-          >
-            {saving ? '· · ·' : done ? '已收录' : '收录到知识库'}
-          </button>
-        )}
       </div>
     </div>
   )
