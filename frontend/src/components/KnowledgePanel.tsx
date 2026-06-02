@@ -64,10 +64,10 @@ export default function KnowledgePanel({ onClose }: { onClose: () => void }) {
     <div className="h-full flex flex-col">
       <div className="flex items-center justify-between px-4 py-3 border-b border-line">
         <span className="text-xs text-soft tracking-wide">知识库管理 ({total} 条)</span>
-        <div className="flex gap-1">
+        <div className="flex items-center gap-2">
           <button onClick={() => setShowAdd(!showAdd)} className="text-xs text-matcha hover:text-matcha-dim transition-colors">+ 新增</button>
           <button onClick={handleReindex} disabled={reindexing} className="text-xs text-soft hover:text-matcha transition-colors">{reindexing ? '索引中...' : '重建索引'}</button>
-          <button onClick={onClose} className="md:hidden text-xs text-soft hover:text-ink">x</button>
+          <button onClick={onClose} className="text-sm text-soft hover:text-ink transition-colors px-1">&times;</button>
         </div>
       </div>
 
