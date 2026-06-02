@@ -47,7 +47,7 @@ if %errorlevel% neq 0 (
     cd /d "%~dp0"
 )
 
-if not exist "%~dp0backend\data\guji_index.json" (
+if not exist "%~dp0backend\data\chroma_db\guji_index.json" (
     echo [Setup] Initializing knowledge base...
     cd /d "%~dp0backend"
     python scripts/init_kb.py
