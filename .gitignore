@@ -37,3 +37,4 @@ backend/data/settings.json
 backend/data/user_cases.json
 backend/data/guji_index.json
 backend/data/texts/*.txt
+!backend/data/texts/README.txt
