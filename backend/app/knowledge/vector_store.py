@@ -76,40 +76,77 @@ class VectorStore:
 
         docs = [c["content"] for c in self.chunks]
 
-        # text2vec 语义分
-        semantic_scores = None
+        from sklearn.metrics.pairwise import cosine_similarity
+
+        # text2vec 语义检索（宽召回）
         if self.embeddings is not None and len(self.embeddings) == len(self.chunks):
             q_emb = self._embed([query])
             if q_emb is not None:
-                from sklearn.metrics.pairwise import cosine_similarity
-                semantic_scores = cosine_similarity(q_emb, self.embeddings)[0]
+                sem_scores = cosine_similarity(q_emb, self.embeddings)[0]
+                # 取 top-20 候选
+                wide_top = np.argsort(sem_scores)[::-1][:min(20, len(docs))]
 
-        # BM25 关键词分
+                # BM25 在候选集中精排
+                candidate_docs = [docs[i] for i in wide_top]
+                from sklearn.feature_extraction.text import TfidfVectorizer
+
+                vec = TfidfVectorizer(max_features=3000, ngram_range=(1, 2), sublinear_tf=True)
+                cand_matrix = vec.fit_transform(candidate_docs)
+                q_vec = vec.transform([query])
+                kw_scores = cosine_similarity(q_vec, cand_matrix)[0]
+
+                # 语义分归一 + 关键词分归一 → 合并
+                sem_sub = sem_scores[wide_top]
+                sem_norm = (sem_sub - sem_sub.min()) / (sem_sub.max() - sem_sub.min() + 1e-8)
+                kw_norm = (kw_scores - kw_scores.min()) / (kw_scores.max() - kw_scores.min() + 1e-8)
+                combined = sem_norm * 0.55 + kw_norm * 0.45
+
+                final_top = np.argsort(combined)[::-1][:n_results]
+                items = []
+                seen = set()
+                for pos in final_top:
+                    idx = wide_top[pos]
+                    content = docs[idx]
+                    key = content[:100]
+                    if key in seen:  # 去重
+                        continue
+                    seen.add(key)
+                    items.append({
+                        "id": f"chunk_{idx}",
+                        "content": content,
+                        "metadata": self.chunks[idx].get("metadata", {}),
+                        "score": float(combined[pos]),
+                    })
+                if items:
+                    return items
+
+        # 纯 text2vec 兜底
+        return self._simple_search(query, docs, n_results)
+
+    def _simple_search(self, query: str, docs: list[str], n_results: int) -> list[dict]:
         from sklearn.feature_extraction.text import TfidfVectorizer
         from sklearn.metrics.pairwise import cosine_similarity
+
         vec = TfidfVectorizer(max_features=5000, ngram_range=(1, 2), sublinear_tf=True)
         matrix = vec.fit_transform(docs)
         q_vec = vec.transform([query])
-        bm25_scores = cosine_similarity(q_vec, matrix)[0]
-
-        # 混合打分：语义 0.6 + BM25 0.4
-        if semantic_scores is not None:
-            combined = semantic_scores * 0.6 + bm25_scores * 0.4
-        else:
-            combined = bm25_scores
-
-        top = np.argsort(combined)[::-1][:n_results]
-
+        scores = cosine_similarity(q_vec, matrix)[0]
+        top = np.argsort(scores)[::-1][:n_results]
         items = []
+        seen = set()
         for idx in top:
-            score = float(combined[idx])
-            if score > 0.1:
-                items.append({
-                    "id": f"chunk_{idx}",
-                    "content": docs[idx],
-                    "metadata": self.chunks[idx].get("metadata", {}),
-                    "score": score,
-                })
+            if scores[idx] <= 0:
+                continue
+            key = docs[idx][:100]
+            if key in seen:
+                continue
+            seen.add(key)
+            items.append({
+                "id": f"chunk_{idx}",
+                "content": docs[idx],
+                "metadata": self.chunks[idx].get("metadata", {}),
+                "score": float(scores[idx]),
+            })
         return items
 
     def count(self) -> int:
