@@ -51,8 +51,18 @@ def load_text_files(store: VectorStore):
         if not fname.endswith(".txt"):
             continue
         fpath = os.path.join(texts_dir, fname)
-        with open(fpath, "r", encoding="utf-8") as f:
-            text = f.read()
+        # 自动检测编码（GBK / UTF-8）
+        text = None
+        for enc in ["utf-8", "gbk", "gb2312", "gb18030"]:
+            try:
+                with open(fpath, "r", encoding=enc) as f:
+                    text = f.read()
+                break
+            except UnicodeDecodeError:
+                continue
+        if text is None:
+            print(f"  {fname}: 无法解码，跳过")
+            continue
 
         source = fname.replace(".txt", "")
         chunks = chunk_text(text, source=source)
