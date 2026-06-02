@@ -148,7 +148,7 @@ export default function KnowledgePanel({ onClose }: { onClose: () => void }) {
           <div key={item.id} className="bg-cream border border-line/50 rounded p-2.5 text-xs">
             {editId === item.id ? (
               <div className="space-y-2">
-                <textarea value={editContent} onChange={(e) => setEditContent(e.target.value)} rows={4} className="w-full bg-warm border border-line rounded px-2 py-1.5 text-ink resize-none" />
+                <textarea value={editContent} onChange={(e) => setEditContent(e.target.value)} rows={12} className="w-full bg-warm border border-line rounded px-2 py-1.5 text-ink resize-none" />
                 <input value={editSource} onChange={(e) => setEditSource(e.target.value)} className="w-full bg-warm border border-line rounded px-2 py-1.5 text-ink" />
                 <div className="flex gap-2">
                   <button onClick={handleSave} className="text-matcha">保存</button>
