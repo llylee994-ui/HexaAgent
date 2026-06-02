@@ -4,26 +4,48 @@ import remarkGfm from 'remark-gfm'
 import type { ChatMessage as ChatMessageType } from '../types'
 import HexagramDisplay from './HexagramDisplay'
 
-export default function ChatMessage({ message }: { message: ChatMessageType }) {
+// 已收录的消息 ID，持久化到 localStorage
+function isCollected(id: string): boolean {
+  try { return JSON.parse(localStorage.getItem('hexa_collected') || '[]').includes(id) } catch { return false }
+}
+function markCollected(id: string) {
+  try {
+    const list = JSON.parse(localStorage.getItem('hexa_collected') || '[]')
+    if (!list.includes(id)) { list.push(id); localStorage.setItem('hexa_collected', JSON.stringify(list)) }
+  } catch {}
+}
+
+export default function ChatMessage({ message, userQuestion }: { message: ChatMessageType; userQuestion?: string }) {
   const isUser = message.role === 'user'
-  const [collected, setCollected] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [done, setDone] = useState(() => isCollected(message.id))
 
   const handleCollect = async () => {
     let content = ''
+    if (userQuestion) content += `【问题】${userQuestion}\n`
     if (message.hexagram) {
       const h = message.hexagram
       const sizhu = h.sizhu ? `${h.sizhu.year}年${h.sizhu.month}月${h.sizhu.day}日${h.sizhu.hour}时` : ''
       const changing = h.changed_to ? ` 之 ${h.changed_to}` : ''
-      content += `【用户案例】${h.hexagram_name}${changing}`
+      content += `【卦象】${h.hexagram_name}${changing}`
       if (sizhu) content += ` 四柱：${sizhu}`
-      content += '\n'
+      const yaoInfo = h.yao_lines.map(l => {
+        const d = l.changing ? '○' : ''
+        const sy = l.shi_ying === 'shi' ? '世' : l.shi_ying === 'ying' ? '应' : ''
+        return `${['','初','二','三','四','五','上'][l.position]}${l.gan}${l.zhi}${l.liuqin}${d}${sy}`
+      }).join(' ')
+      content += `\n【六爻】${yaoInfo}\n`
     }
-    content += message.content
+    content += `\n【断语】${message.content}`
+
+    setSaving(true)
     await fetch('/api/knowledge', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ content, source: '用户收录' }),
     })
-    setCollected(true)
+    markCollected(message.id)
+    setSaving(false)
+    setDone(true)
   }
 
   return (
@@ -39,10 +61,10 @@ export default function ChatMessage({ message }: { message: ChatMessageType }) {
         {!isUser && message.content && (
           <button
             onClick={handleCollect}
-            disabled={collected}
-            className={`mt-1 text-[10px] transition-colors ${collected ? 'text-matcha-dim/50' : 'text-soft hover:text-matcha'}`}
+            disabled={saving || done}
+            className={`mt-1 text-[11px] transition-colors tracking-wide ${done ? 'text-matcha-dim/40' : saving ? 'text-matcha animate-pulse' : 'text-soft hover:text-matcha'}`}
           >
-            {collected ? '已收录' : '收录到知识库'}
+            {saving ? '· · ·' : done ? '已收录' : '收录到知识库'}
           </button>
         )}
       </div>

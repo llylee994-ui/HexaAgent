@@ -110,12 +110,17 @@ def api_knowledge_list(search: str = "", limit: int = 100, offset: int = 0):
 @app.post("/api/knowledge")
 def api_knowledge_add(data: dict):
     store = KBStore()
+    new_content = data.get("content", "")
+    # 去重：检查是否已存在相同内容
+    for c in store.chunks:
+        if c["content"].strip() == new_content.strip():
+            return {"success": True, "id": store.chunks.index(c), "duplicate": True}
     chunk = {
-        "content": data.get("content", ""),
+        "content": new_content,
         "metadata": {"source": data.get("source", "用户"), "keywords": data.get("keywords", ""), "index": store.count()},
     }
     store.add_chunks([chunk])
-    return {"success": True, "id": store.count() - 1}
+    return {"success": True, "id": store.count() - 1, "duplicate": False}
 
 
 @app.put("/api/knowledge/{chunk_id}")
