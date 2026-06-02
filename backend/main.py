@@ -152,6 +152,22 @@ def api_knowledge_delete(chunk_id: int):
     return {"success": True}
 
 
+@app.get("/api/knowledge/collected")
+def api_knowledge_collected():
+    """返回已收录消息的内容指纹列表（供前端同步）"""
+    store = KBStore()
+    fps = []
+    for c in store.chunks:
+        if c.get("metadata", {}).get("source") == "用户收录":
+            # 计算内容指纹
+            content = c["content"]
+            h = 0
+            for i in range(min(len(content), 200)):
+                h = ((h << 5) - h + ord(content[i])) | 0
+            fps.append(str(h))
+    return {"fingerprints": fps}
+
+
 @app.post("/api/knowledge/reindex")
 def api_knowledge_reindex():
     store = KBStore()

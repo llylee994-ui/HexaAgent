@@ -81,6 +81,7 @@ interface ChatState {
   textInput: string
   isLoading: boolean
   thinkingChain: string[]
+  collectedFps: Set<string>
 
   setMode: (mode: 'auto' | 'manual' | 'text') => void
   updateYaoLine: (pos: number, field: Partial<YaoLine>) => void
@@ -95,6 +96,7 @@ interface ChatState {
   clearMessages: () => void
   setLoading: (v: boolean) => void
   setThinkingChain: (steps: string[]) => void
+  loadCollectedFps: () => Promise<void>
   buildHexagramData: (question: string) => HexagramData
 }
 
@@ -114,6 +116,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
   textInput: '',
   isLoading: false,
   thinkingChain: [],
+  collectedFps: new Set(),
 
   setMode: (mode) => set({ mode }),
 
@@ -251,6 +254,14 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
   setLoading: (v) => set({ isLoading: v }),
   setThinkingChain: (steps) => set({ thinkingChain: steps }),
+
+  loadCollectedFps: async () => {
+    try {
+      const r = await fetch('/api/knowledge/collected')
+      const d = await r.json()
+      set({ collectedFps: new Set(d.fingerprints || []) })
+    } catch {}
+  },
 
   buildHexagramData: (question) => {
     const s = get()
