@@ -15,6 +15,7 @@ export default function KnowledgePanel({ onClose }: { onClose: () => void }) {
   const [newSource, setNewSource] = useState('用户')
   const [page, setPage] = useState(0)
   const [reindexing, setReindexing] = useState(false)
+  const [importing, setImporting] = useState(false)
   const [showImport, setShowImport] = useState(false)
 
   const messages = useChatStore((s) => s.messages)
@@ -64,11 +65,11 @@ export default function KnowledgePanel({ onClose }: { onClose: () => void }) {
   }
 
   const handleImport = async () => {
-    if (selectedIds.size === 0) return
+    if (selectedIds.size === 0 || importing) return
+    setImporting(true)
     const selected = messages.filter(m => selectedIds.has(m.id))
     const parts: string[] = []
     parts.push('【用户收录 · 对话合并】')
-    let prevRole = ''
     for (const m of selected) {
       const roleTag = m.role === 'user' ? '【问】' : '【断】'
       parts.push(`${roleTag} ${m.content}`)
@@ -78,12 +79,12 @@ export default function KnowledgePanel({ onClose }: { onClose: () => void }) {
         const changing = h.changed_to ? ` 之 ${h.changed_to}` : ''
         parts.push(`【卦象：${h.hexagram_name}${changing}${sizhu ? ' ' + sizhu : ''}】`)
       }
-      prevRole = m.role
     }
     const content = parts.join('\n\n')
     await fetch('/api/knowledge', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content, source: '用户导入' }) })
     setSelectedIds(new Set())
     setShowImport(false)
+    setImporting(false)
     load()
   }
 
@@ -128,7 +129,7 @@ export default function KnowledgePanel({ onClose }: { onClose: () => void }) {
           </div>
           <div className="flex justify-between items-center pt-1 border-t border-line/50">
             <span className="text-[10px] text-soft">已选 {selectedIds.size} 条</span>
-            <button onClick={handleImport} disabled={selectedIds.size === 0} className="bg-matcha disabled:bg-line text-ink rounded px-3 py-1 text-xs font-medium transition-colors">合并导入</button>
+            <button onClick={handleImport} disabled={selectedIds.size === 0 || importing} className="bg-matcha disabled:bg-line text-ink rounded px-3 py-1 text-xs font-medium transition-colors">{importing ? '导入中...' : '合并导入'}</button>
           </div>
         </div>
       )}
