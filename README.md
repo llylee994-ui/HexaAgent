@@ -24,17 +24,32 @@
 
 - Python 3.10+
 - Node.js 18+
-- DeepSeek API Key
+- DeepSeek API Key（[注册获取](https://platform.deepseek.com/api_keys)）
 
-### 启动
+### macOS 安装依赖
+
+建议用 Homebrew 安装 Python 和 Node.js：
+
+```bash
+brew install python@3.12 node
+```
+
+克隆并启动：
 
 ```bash
 git clone https://github.com/llylee994-ui/HexaAgent.git
 cd HexaAgent
-# 双击 start.bat（Windows）或 ./start.sh（macOS/Linux）
+chmod +x start.sh
+./start.sh
 ```
 
-首次运行自动安装依赖、初始化知识库。浏览器打开后填写 API Key 即可使用。手机同 WiFi 下访问终端显示的 Network 地址。
+### Windows 安装依赖
+
+安装 [Python 3.10+](https://www.python.org/downloads/) 和 [Node.js 18+](https://nodejs.org/)，确保勾选 "Add to PATH"。然后双击 `start.bat`。
+
+### 启动说明
+
+首次运行会自动安装 Python/Node 依赖，并初始化古籍知识库（约 500+ 条目）。浏览器打开 http://localhost:5173 后填写 API Key 即可使用。手机同 WiFi 下访问终端显示的 Network 地址。
 
 ## 三种输入模式
 
