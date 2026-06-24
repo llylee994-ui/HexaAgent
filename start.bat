@@ -19,15 +19,33 @@ for %%c in (python3 python py) do (
     )
 )
 
+REM --- Search common install directories ---
+if "%PYTHON%"=="" (
+    for %%d in (
+        "%LOCALAPPDATA%\Programs\Python"
+        "C:\Program Files"
+        "C:\"
+    ) do (
+        if "!PYTHON!"=="" if exist "%%~d" (
+            for /f "delims=" %%f in ('dir /b /ad "%%~d\Python3*" 2^>nul ^| sort /r') do (
+                if "!PYTHON!"=="" if exist "%%~d\%%f\python.exe" (
+                    set PYTHON=%%~d\%%f\python.exe
+                    set PIP=%%~d\%%f\python.exe -m pip
+                )
+            )
+        )
+    )
+)
+
 if "%PYTHON%"=="" (
     echo [Error] Python not found. Please install Python 3.10+ first.
     echo.
     echo    Troubleshooting:
     echo    1. Install from https://www.python.org/downloads/
     echo    2. CHECK "Add Python to PATH" during installation!
-    echo    3. If already installed, re-run the installer and
-    echo       choose "Modify" ^> check "Add to PATH"
-    echo    4. Or try: py --version (Python launcher)
+    echo    3. If already installed, re-run installer,
+    echo       choose "Modify" ^^> check "Add to PATH"
+    echo    4. Or run: C:\Users\%USERNAME%\AppData\Local\Programs\Python\Python312\python.exe --version
     echo.
     pause
     exit /b 1
